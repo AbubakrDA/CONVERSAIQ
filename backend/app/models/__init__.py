@@ -13,6 +13,7 @@ from app.models.nlp import QuestionCluster, LoggedQuestion
 from app.models.analytics import AIInsight, OrganizationalMemoryEntry, ExecutiveReport
 from app.models.tool import ToolExecution, MCPServerConfig
 from app.models.enterprise import TenantBranding, AuditLog, TenantSecurityPolicy, ModelRoutingConfig
+from app.models.backup import BackupRecord, RestoreDrill, BackupRetentionPolicy
 
 __all__ = [
     "Base",
@@ -49,4 +50,7 @@ __all__ = [
     "AuditLog",
     "TenantSecurityPolicy",
     "ModelRoutingConfig",
+    "BackupRecord",
+    "RestoreDrill",
+    "BackupRetentionPolicy",
 ]
