@@ -1,0 +1,57 @@
+from typing import Dict, Any, List, Callable
+from fastapi import Header, HTTPException, status, Request
+from app.core.security import verify_access_token
+
+
+class AuthenticatedUser:
+    def __init__(self, user_id: str, email: str, role: str, tenant_id: str):
+        self.id = user_id
+        self.email = email
+        self.role = role
+        self.tenant_id = tenant_id
+
+
+async def get_current_user(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> AuthenticatedUser:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or malformed Bearer authorization token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = authorization.split(" ", 1)[1].strip()
+    payload = verify_access_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid, signature-tampered, or expired access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = AuthenticatedUser(
+        user_id=payload.get("sub", ""),
+        email=payload.get("email", ""),
+        role=payload.get("role", "agent"),
+        tenant_id=payload.get("tenant_id", ""),
+    )
+
+    # Attach to request state for middleware & telemetry
+    request.state.current_user = user
+    request.state.tenant_id = user.tenant_id
+
+    return user
+
+
+def require_roles(*allowed_roles: str) -> Callable[[AuthenticatedUser], AuthenticatedUser]:
+    def role_checker(current_user: AuthenticatedUser = None) -> AuthenticatedUser:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: User role '{current_user.role}' lacks required permissions ({', '.join(allowed_roles)})",
+            )
+        return current_user
+
+    return role_checker
