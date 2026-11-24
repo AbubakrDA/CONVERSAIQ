@@ -11,6 +11,7 @@ from app.models.memory import CustomerMemory
 from app.models.ticket import Ticket, TicketNote, Feedback
 from app.models.nlp import QuestionCluster, LoggedQuestion
 from app.models.analytics import AIInsight, OrganizationalMemoryEntry, ExecutiveReport
+from app.models.tool import ToolExecution, MCPServerConfig
 
 __all__ = [
     "Base",
@@ -41,4 +42,6 @@ __all__ = [
     "AIInsight",
     "OrganizationalMemoryEntry",
     "ExecutiveReport",
+    "ToolExecution",
+    "MCPServerConfig",
 ]
