@@ -28,6 +28,7 @@ class QuestionCluster(TenantScopedModel):
         "LoggedQuestion",
         back_populates="cluster",
         cascade="all, delete-orphan",
+        order_by="LoggedQuestion.created_at.desc",
     )
 
     def __init__(self, **kwargs: Any) -> None:
@@ -78,3 +79,4 @@ class LoggedQuestion(TenantScopedModel):
         kwargs.setdefault("was_rag_matched", True)
         kwargs.setdefault("rag_confidence_score", 1.0)
         super().__init__(**kwargs)
+

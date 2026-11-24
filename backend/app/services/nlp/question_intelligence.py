@@ -157,3 +157,4 @@ class QuestionIntelligenceService:
         await db.refresh(target_cluster)
 
         return logged_q, target_cluster
+
