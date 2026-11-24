@@ -6,6 +6,7 @@ Generates CycloneDX v1.5 JSON SBOM for backend and frontend components.
 
 import json
 import uuid
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -42,26 +43,27 @@ def generate_sbom():
         "components": []
     }
 
-    # 1. Parse Backend Dependencies
-    pyproject_path = ROOT / "backend" / "pyproject.toml"
-    if pyproject_path.exists():
-        import re
-        text = pyproject_path.read_text(encoding="utf-8")
-        dep_section = re.search(r"dependencies\s*=\s*\[(.*?)\]", text, re.DOTALL)
-        if dep_section:
-            deps = re.findall(r'"([a-zA-Z0-9_\-\[\]]+)([>=<~!]*[0-9a-zA-Z\.]*)"', dep_section.group(1))
-            for name, version in deps:
-                clean_name = name.split("[")[0]
+    # 1. Parse Backend Dependencies from requirements.txt
+    req_path = ROOT / "backend" / "requirements.txt"
+    if req_path.exists():
+        for line in req_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            m = re.match(r"^([a-zA-Z0-9_\-\[\]]+)\s*([>=<~!]+.*)?$", line)
+            if m:
+                pkg_name = m.group(1).split("[")[0]
+                version = (m.group(2) or "").lstrip(">=<~!") or "1.0.0"
                 sbom["components"].append({
-                    "bom-ref": f"pkg:pypi/{clean_name}@{version or 'latest'}",
+                    "bom-ref": f"pkg:pypi/{pkg_name}@{version}",
                     "type": "library",
-                    "name": clean_name,
-                    "version": version.lstrip(">=<~!") or "1.0.0",
-                    "purl": f"pkg:pypi/{clean_name}",
+                    "name": pkg_name,
+                    "version": version,
+                    "purl": f"pkg:pypi/{pkg_name}",
                     "scope": "required"
                 })
 
-    # 2. Parse Frontend Dependencies
+    # 2. Parse Frontend Dependencies from package.json
     package_json_path = ROOT / "frontend" / "package.json"
     if package_json_path.exists():
         pkg_data = json.loads(package_json_path.read_text(encoding="utf-8"))

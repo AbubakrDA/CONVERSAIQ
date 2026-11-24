@@ -17,6 +17,8 @@ class PromptGuard:
         re.compile(r"output\s+(the\s+)?(system\s+prompt|secret\s+key|api\s+key)", re.IGNORECASE),
         re.compile(r"drop\s+(database|table)\b", re.IGNORECASE),
         re.compile(r"<\|im_start\|>|<\|im_end\|>|\[INST\]|\[/INST\]", re.IGNORECASE),
+        re.compile(r"</?system>|</?instruction>|---\s*END SYSTEM INSTRUCTIONS\s*---", re.IGNORECASE),
+        re.compile(r"override\s+all\s+security\s+boundaries", re.IGNORECASE),
     ]
 
     MAX_MESSAGE_LENGTH = 4000

@@ -11,12 +11,20 @@ async def test_owasp_api1_bola_idor_protection(client: AsyncClient) -> None:
     headers_a = {"Authorization": f"Bearer {token_a}"}
     headers_b = {"Authorization": f"Bearer {token_b}"}
 
+    # Tenant Alpha registers a customer via conversation
+    conv_res = await client.post(
+        "/api/v1/chat/conversations",
+        headers=headers_a,
+        json={"customer_name": "Alice Alpha", "channel": "web"},
+    )
+    assert conv_res.status_code == 200
+    cust_id = conv_res.json()["data"]["customer_id"]
+
     # Tenant Alpha creates a ticket
     ticket_payload = {
-        "title": "Alpha Confidential Security Ticket",
+        "customer_id": cust_id,
+        "subject": "Alpha Confidential Security Ticket",
         "description": "Sensitive customer account credentials issue",
-        "priority": "HIGH",
-        "channel": "PORTAL",
     }
     res_ticket = await client.post("/api/v1/tickets", headers=headers_a, json=ticket_payload)
     assert res_ticket.status_code == 200
@@ -114,12 +122,19 @@ async def test_xss_payload_neutralization(client: AsyncClient) -> None:
     token = create_access_token("user_xss", "tenant_xss", "admin", "xss@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
+    conv_res = await client.post(
+        "/api/v1/chat/conversations",
+        headers=headers,
+        json={"customer_name": "XSS Tester", "channel": "web"},
+    )
+    assert conv_res.status_code == 200
+    cust_id = conv_res.json()["data"]["customer_id"]
+
     xss_payload = "<script>alert('pwned')</script><img src=x onerror=alert(1)>"
     ticket_payload = {
-        "title": "XSS Test Ticket",
+        "customer_id": cust_id,
+        "subject": "XSS Test Ticket",
         "description": xss_payload,
-        "priority": "LOW",
-        "channel": "WEB",
     }
     res = await client.post("/api/v1/tickets", headers=headers, json=ticket_payload)
     assert res.status_code == 200
