@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRouter } from '../router';
+import { useRouter } from '../router/hooks';
 import { ChevronRight, Home } from 'lucide-react';
 
 const routeLabels: Record<string, string> = {

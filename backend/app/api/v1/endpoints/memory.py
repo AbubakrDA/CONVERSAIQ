@@ -92,7 +92,7 @@ async def list_customer_memories(
     query = select(CustomerMemory).where(
         CustomerMemory.customer_id == customer_id,
         CustomerMemory.tenant_id == current_user.tenant_id,
-        CustomerMemory.is_active == True,
+        CustomerMemory.is_active.is_(True),
     )
     if memory_type:
         query = query.where(CustomerMemory.memory_type == memory_type)
@@ -127,7 +127,7 @@ async def get_customer_memory_context(
     query = select(CustomerMemory).where(
         CustomerMemory.customer_id == customer_id,
         CustomerMemory.tenant_id == current_user.tenant_id,
-        CustomerMemory.is_active == True,
+        CustomerMemory.is_active.is_(True),
     ).order_by(CustomerMemory.created_at.desc())
 
     result = await db.execute(query)

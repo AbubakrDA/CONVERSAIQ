@@ -70,7 +70,8 @@ def test_docker_and_terraform_manifest_files_exist_and_valid() -> None:
     # 1. Backend Dockerfile.prod
     backend_prod = os.path.join(root, "backend", "Dockerfile.prod")
     assert os.path.exists(backend_prod)
-    backend_content = open(backend_prod, "r", encoding="utf-8").read()
+    with open(backend_prod, "r", encoding="utf-8") as f:
+        backend_content = f.read()
     assert "FROM python:3.12-slim AS builder" in backend_content
     assert "USER conversaiq" in backend_content
     assert "HEALTHCHECK" in backend_content
@@ -78,20 +79,23 @@ def test_docker_and_terraform_manifest_files_exist_and_valid() -> None:
     # 2. Frontend Dockerfile.prod and Nginx conf
     frontend_prod = os.path.join(root, "frontend", "Dockerfile.prod")
     assert os.path.exists(frontend_prod)
-    frontend_content = open(frontend_prod, "r", encoding="utf-8").read()
+    with open(frontend_prod, "r", encoding="utf-8") as f:
+        frontend_content = f.read()
     assert "FROM node:20-alpine AS builder" in frontend_content
     assert "FROM nginx:1.27-alpine AS runner" in frontend_content
 
     nginx_conf = os.path.join(root, "frontend", "nginx.conf")
     assert os.path.exists(nginx_conf)
-    nginx_content = open(nginx_conf, "r", encoding="utf-8").read()
+    with open(nginx_conf, "r", encoding="utf-8") as f:
+        nginx_content = f.read()
     assert "X-Frame-Options" in nginx_content
     assert "try_files $uri $uri/ /index.html" in nginx_content
 
     # 3. Docker Compose Production
     compose_prod = os.path.join(root, "docker-compose.prod.yml")
     assert os.path.exists(compose_prod)
-    compose_content = open(compose_prod, "r", encoding="utf-8").read()
+    with open(compose_prod, "r", encoding="utf-8") as f:
+        compose_content = f.read()
     assert "conversaiq-backend-prod" in compose_content
     assert "conversaiq-frontend-prod" in compose_content
     assert "pgvector/pgvector:pg16" in compose_content
@@ -99,7 +103,8 @@ def test_docker_and_terraform_manifest_files_exist_and_valid() -> None:
     # 4. Terraform manifests
     tf_main = os.path.join(root, "infrastructure", "terraform", "main.tf")
     assert os.path.exists(tf_main)
-    tf_content = open(tf_main, "r", encoding="utf-8").read()
+    with open(tf_main, "r", encoding="utf-8") as f:
+        tf_content = f.read()
     assert "aws_ecs_cluster" in tf_content
     assert "aws_db_instance" in tf_content
     assert "aws_s3_bucket" in tf_content

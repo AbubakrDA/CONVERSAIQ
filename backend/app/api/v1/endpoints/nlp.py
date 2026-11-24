@@ -83,7 +83,7 @@ async def get_knowledge_gaps(
         .options(selectinload(QuestionCluster.questions))
         .where(
             QuestionCluster.tenant_id == current_user.tenant_id,
-            QuestionCluster.is_knowledge_gap == True,
+            QuestionCluster.is_knowledge_gap.is_(True),
         )
         .order_by(QuestionCluster.frequency.desc())
     )
