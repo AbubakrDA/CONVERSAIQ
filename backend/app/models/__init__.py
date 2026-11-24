@@ -6,6 +6,7 @@ from app.models.customer import Customer
 from app.models.conversation import Conversation, Message
 from app.models.business import Product, Service, Order, Appointment, DataSource, SyncHistory
 from app.models.document import Document
+from app.models.knowledge import KBCollection, KBDocument, KBChunk
 
 __all__ = [
     "Base",
@@ -24,4 +25,7 @@ __all__ = [
     "DataSource",
     "SyncHistory",
     "Document",
+    "KBCollection",
+    "KBDocument",
+    "KBChunk",
 ]
