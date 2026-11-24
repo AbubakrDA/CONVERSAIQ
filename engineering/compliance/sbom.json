@@ -1,0 +1,81 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:f5c11119-2c70-4ba7-9ffb-d903755c8d03",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-24T18:49:19.259878+00:00",
+    "tools": [
+      {
+        "vendor": "ConversaIQ Engineering",
+        "name": "conversaiq-sbom-generator",
+        "version": "1.0.0"
+      }
+    ],
+    "component": {
+      "bom-ref": "pkg:conversaiq/platform@1.0.0",
+      "type": "application",
+      "name": "ConversaIQ Enterprise AI Platform",
+      "version": "1.0.0",
+      "description": "Enterprise AI Customer Support & Business Intelligence Platform",
+      "licenses": [
+        {
+          "license": {
+            "id": "Proprietary"
+          }
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/fastapi@>=0.115.0",
+      "type": "library",
+      "name": "fastapi",
+      "version": "0.115.0",
+      "purl": "pkg:pypi/fastapi",
+      "scope": "required"
+    },
+    {
+      "bom-ref": "pkg:npm/clsx@2.1.1",
+      "type": "library",
+      "name": "clsx",
+      "version": "2.1.1",
+      "purl": "pkg:npm/clsx",
+      "scope": "required"
+    },
+    {
+      "bom-ref": "pkg:npm/lucide-react@0.469.0",
+      "type": "library",
+      "name": "lucide-react",
+      "version": "0.469.0",
+      "purl": "pkg:npm/lucide-react",
+      "scope": "required"
+    },
+    {
+      "bom-ref": "pkg:npm/react@18.3.1",
+      "type": "library",
+      "name": "react",
+      "version": "18.3.1",
+      "purl": "pkg:npm/react",
+      "scope": "required"
+    },
+    {
+      "bom-ref": "pkg:npm/react-dom@18.3.1",
+      "type": "library",
+      "name": "react-dom",
+      "version": "18.3.1",
+      "purl": "pkg:npm/react-dom",
+      "scope": "required"
+    },
+    {
+      "bom-ref": "pkg:npm/tailwind-merge@2.6.0",
+      "type": "library",
+      "name": "tailwind-merge",
+      "version": "2.6.0",
+      "purl": "pkg:npm/tailwind-merge",
+      "scope": "required"
+    }
+  ]
+}
