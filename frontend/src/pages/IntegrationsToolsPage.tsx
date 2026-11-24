@@ -1,48 +1,149 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, Server } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, Server, Lock, AlertTriangle } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui';
 
 export const IntegrationsToolsPage: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-navy">Integrations & Tool Gateway</h1>
-          <p className="text-xs text-navy-muted">Phase 12 Platform Module • Governed Tool Gateway, external MCP proxies, and human approval gates</p>
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Tool Gateway & Integrations Registry</h1>
+          <p className="text-xs text-navy-muted">
+            Specification §6 • Governed Tool Execution, Risk Classification, MCP Server Proxies, and Human Approval
+          </p>
         </div>
-        <span className="px-3 py-1 rounded-pill text-xs font-semibold bg-tealAccent-light text-tealAccent border border-tealAccent-border">
-          Module §6 Placeholder
-        </span>
+        <div className="flex items-center space-x-2">
+          <Badge variant="teal" hasDot>Tool Gateway Active</Badge>
+          <Button variant="primary" size="sm">+ Register Tool</Button>
+        </div>
       </div>
 
-      <div className="bg-surface rounded-card p-8 border border-border-subtle shadow-card text-center max-w-2xl mx-auto space-y-4 my-8">
-        <div className="w-14 h-14 rounded-full bg-tealAccent-light border border-tealAccent-border text-tealAccent flex items-center justify-center mx-auto">
-          <Cpu className="w-7 h-7" />
+      {/* Tool Risk Tier Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-surface rounded-card p-5 border border-border-subtle shadow-card space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-xs text-navy flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-status-success" /> LOW Risk Tools
+            </span>
+            <Badge size="sm" variant="success">Auto-Approved</Badge>
+          </div>
+          <p className="text-xs text-navy-muted">
+            Read-only queries: knowledge search, order status check, product catalog lookup, appointment availability.
+          </p>
         </div>
-        <h2 className="text-xl font-bold text-navy">Governed Tool Execution Gateway</h2>
-        <p className="text-sm text-navy-secondary leading-relaxed">
-          The Tool Gateway isolates AI models from direct database or system access. All tool calls require strict Pydantic schema validation, risk classification (Low / Medium / High), and human approval for high-risk operations.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-4">
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-tealAccent" /> Risk Tiers
+
+        <div className="bg-surface rounded-card p-5 border border-border-subtle shadow-card space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-xs text-navy flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-status-warning" /> MEDIUM Risk Tools
             </span>
-            <p className="text-navy-muted">Approval gates for write actions</p>
+            <Badge size="sm" variant="warning">Controlled</Badge>
           </div>
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <Server className="w-3.5 h-3.5 text-blueAccent" /> MCP Proxy
+          <p className="text-xs text-navy-muted">
+            Controlled state changes: reschedule appointments, update customer address, generate return label.
+          </p>
+        </div>
+
+        <div className="bg-surface rounded-card p-5 border border-border-subtle shadow-card space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-xs text-navy flex items-center gap-1.5">
+              <Lock className="w-4 h-4 text-status-danger" /> HIGH Risk Tools
             </span>
-            <p className="text-navy-muted">Sandboxed external servers</p>
+            <Badge size="sm" variant="danger">Human Gate</Badge>
           </div>
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5 text-status-warning" /> Rate Limiting
-            </span>
-            <p className="text-navy-muted">Token & concurrency limits</p>
-          </div>
+          <p className="text-xs text-navy-muted">
+            Privileged / financial actions: issue refund, cancel subscription, delete account. Mandatory human approval required.
+          </p>
         </div>
       </div>
+
+      {/* Registered Tools Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Registered Tool Registry (`/api/v1/tools/execute`)</CardTitle>
+          <CardDescription>
+            Every tool is validated with Pydantic v2 schemas and isolated from raw SQL execution.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tool Identifier</TableHead>
+                <TableHead>Target Subsystem</TableHead>
+                <TableHead>Risk Classification</TableHead>
+                <TableHead>Schema Validation</TableHead>
+                <TableHead>Human Approval</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-mono font-bold text-navy">check_service_availability</TableCell>
+                <TableCell>Business Data Hub (Appointments)</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="success">LOW</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="teal">Pydantic v2 Schema</Badge>
+                </TableCell>
+                <TableCell className="text-navy-muted text-[11px]">Automatic</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="success" hasDot>Active</Badge>
+                </TableCell>
+              </TableRow>
+
+              <TableRow>
+                <TableCell className="font-mono font-bold text-navy">query_knowledge_base</TableCell>
+                <TableCell>Knowledge Base RAG (pgvector)</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="success">LOW</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="teal">Pydantic v2 Schema</Badge>
+                </TableCell>
+                <TableCell className="text-navy-muted text-[11px]">Automatic</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="success" hasDot>Active</Badge>
+                </TableCell>
+              </TableRow>
+
+              <TableRow>
+                <TableCell className="font-mono font-bold text-navy">reschedule_appointment</TableCell>
+                <TableCell>Business Data Hub (Bookings)</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="warning">MEDIUM</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="teal">Pydantic v2 Schema</Badge>
+                </TableCell>
+                <TableCell className="text-navy font-semibold text-[11px]">Policy Evaluated</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="success" hasDot>Active</Badge>
+                </TableCell>
+              </TableRow>
+
+              <TableRow>
+                <TableCell className="font-mono font-bold text-navy">issue_order_refund</TableCell>
+                <TableCell>Financial / Payments Connector</TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="danger">HIGH</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="teal">Pydantic v2 Schema</Badge>
+                </TableCell>
+                <TableCell className="text-status-danger font-bold text-[11px]">
+                  <AlertTriangle className="w-3 h-3 inline mr-1" /> Mandatory Review
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="danger" hasDot>Gated</Badge>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

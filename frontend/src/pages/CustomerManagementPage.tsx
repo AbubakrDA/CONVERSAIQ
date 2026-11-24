@@ -1,48 +1,124 @@
 import React from 'react';
-import { Users, Brain, History, HeartHandshake } from 'lucide-react';
+import { Users, Brain, History, Search, Filter, ShieldCheck, Heart } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input } from '../components/ui';
 
 export const CustomerManagementPage: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-navy">Customer Management & Memory</h1>
-          <p className="text-xs text-navy-muted">Phase 8 Platform Module • Customer profiles, interaction history, and semantic memory</p>
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Customer Directory & Memory Store</h1>
+          <p className="text-xs text-navy-muted">
+            Module C • Working Context, Episodic Interaction Records, and Long-Term Semantic Customer Preferences
+          </p>
         </div>
-        <span className="px-3 py-1 rounded-pill text-xs font-semibold bg-tealAccent-light text-tealAccent border border-tealAccent-border">
-          Module C Placeholder
-        </span>
+        <div className="flex items-center space-x-2">
+          <Button variant="primary" size="sm">+ New Customer</Button>
+        </div>
       </div>
 
-      <div className="bg-surface rounded-card p-8 border border-border-subtle shadow-card text-center max-w-2xl mx-auto space-y-4 my-8">
-        <div className="w-14 h-14 rounded-full bg-tealAccent-light border border-tealAccent-border text-tealAccent flex items-center justify-center mx-auto">
-          <Users className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-navy">Customer Memory & Profile Engine</h2>
-        <p className="text-sm text-navy-secondary leading-relaxed">
-          Manage unified customer records, working interaction context, episodic history (orders, prior questions), and durable semantic preferences with complete provenance and privacy controls.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-4">
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <Brain className="w-3.5 h-3.5 text-tealAccent" /> Working Memory
-            </span>
-            <p className="text-navy-muted">Real-time session state</p>
+      {/* Customer Directory Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle>Customer Intelligence Registry</CardTitle>
+              <CardDescription>
+                Profiles grounded in multi-tier memory to ensure AI agents retain context without memory poisoning.
+              </CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Search customers by name, email, phone..."
+                leftIcon={<Search className="w-3.5 h-3.5" />}
+                className="w-64"
+              />
+              <Button size="sm" variant="outline">
+                <Filter className="w-3 h-3 mr-1" /> Filter
+              </Button>
+            </div>
           </div>
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <History className="w-3.5 h-3.5 text-blueAccent" /> Episodic Memory
-            </span>
-            <p className="text-navy-muted">Historical interactions</p>
-          </div>
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <HeartHandshake className="w-3.5 h-3.5 text-status-success" /> Semantic Memory
-            </span>
-            <p className="text-navy-muted">Customer preferences</p>
-          </div>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer Name</TableHead>
+                <TableHead>Contact Info</TableHead>
+                <TableHead>Business Mode</TableHead>
+                <TableHead>Total Interactions</TableHead>
+                <TableHead>Memory Status</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-7 h-7 rounded-full bg-tealAccent-light text-tealAccent font-bold text-xs flex items-center justify-center">
+                      SJ
+                    </div>
+                    <div>
+                      <span className="font-semibold text-navy block">Sarah Jenkins</span>
+                      <span className="text-[10px] text-navy-muted">ID: cust_99214</span>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <p className="text-navy">sarah.j@example.com</p>
+                  <p className="text-[10px] text-navy-muted">+1 (555) 349-1823</p>
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="teal">Services (Appointments)</Badge>
+                </TableCell>
+                <TableCell>14 Conversations</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Badge size="sm" variant="success" hasDot>Working</Badge>
+                    <Badge size="sm" variant="blue">Episodic (6)</Badge>
+                    <Badge size="sm" variant="neutral">Semantic (2)</Badge>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Button size="sm" variant="outline">Inspect Memory</Button>
+                </TableCell>
+              </TableRow>
+
+              <TableRow>
+                <TableCell>
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-7 h-7 rounded-full bg-blueAccent-light text-blueAccent font-bold text-xs flex items-center justify-center">
+                      MV
+                    </div>
+                    <div>
+                      <span className="font-semibold text-navy block">Marcus Vance</span>
+                      <span className="text-[10px] text-navy-muted">ID: cust_99215</span>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <p className="text-navy">marcus.vance@company.net</p>
+                  <p className="text-[10px] text-navy-muted">+1 (555) 882-9910</p>
+                </TableCell>
+                <TableCell>
+                  <Badge size="sm" variant="blue">Products (Orders)</Badge>
+                </TableCell>
+                <TableCell>8 Conversations</TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Badge size="sm" variant="warning" hasDot>Escalated</Badge>
+                    <Badge size="sm" variant="blue">Episodic (3)</Badge>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Button size="sm" variant="outline">Inspect Memory</Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

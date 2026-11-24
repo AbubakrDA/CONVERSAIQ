@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
-describe('ConversaIQ AppShell & Navigation Verification (Task 1.3)', () => {
+describe('ConversaIQ AppShell, Navigation & Module Views Verification (Task 1.4 & 1.5)', () => {
   it('renders the ConversaIQ brand header and tenant context badge', () => {
     render(<App />);
     expect(screen.getByText('ConversaIQ')).toBeInTheDocument();
@@ -38,30 +38,56 @@ describe('ConversaIQ AppShell & Navigation Verification (Task 1.3)', () => {
     expect(screen.getByRole('button', { name: /Collapse Sidebar/i })).toBeInTheDocument();
   });
 
-  it('navigates to AI Chat Agent and updates breadcrumbs and main view', () => {
+  it('navigates to AI Chat Agent and renders the 3-column workspace', () => {
     render(<App />);
     const chatLink = screen.getByRole('link', { name: /AI Chat Agent/i });
     fireEvent.click(chatLink);
 
-    expect(screen.getByRole('heading', { name: /AI Customer Support Chat/i, level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Module A Placeholder/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /AI Customer Support Chat Workspace/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/Sarah Jenkins/i)).toBeInTheDocument();
+    expect(screen.getByText(/Customer Context & Memory/i)).toBeInTheDocument();
+    expect(screen.getByText(/Grounded in Business Hub/i)).toBeInTheDocument();
   });
 
-  it('navigates to Business Data Hub and Knowledge Base views', () => {
+  it('navigates to Business Data Hub and allows toggling business model configuration', () => {
     render(<App />);
     const dataHubLink = screen.getByRole('link', { name: /Business Data Hub/i });
     fireEvent.click(dataHubLink);
-    expect(screen.getByRole('heading', { name: /Business Data Hub/i, level: 1 })).toBeInTheDocument();
 
-    const kbLink = screen.getByRole('link', { name: /Knowledge Base/i });
-    fireEvent.click(kbLink);
-    expect(screen.getByRole('heading', { name: /Knowledge Base & RAG/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Business Data Hub/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/Organization Business Model Configuration/i)).toBeInTheDocument();
+
+    // Toggle business mode to "Products Only"
+    const productsCard = screen.getByText('Products Only');
+    fireEvent.click(productsCard);
+    expect(screen.getByText(/SKUs, catalog, stock quantities/i)).toBeInTheDocument();
   });
 
-  it('opens and closes notifications popover in header', () => {
+  it('navigates to Knowledge Base and displays collections and pgvector status', () => {
     render(<App />);
-    const notifButton = screen.getByRole('button', { name: /Notifications/i });
-    fireEvent.click(notifButton);
-    expect(screen.getByText(/Google Sheets Synced/i)).toBeInTheDocument();
+    const kbLink = screen.getByRole('link', { name: /Knowledge Base/i });
+    fireEvent.click(kbLink);
+
+    expect(screen.getByRole('heading', { name: /Knowledge Base & RAG Index/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/Indexed \(pgvector\)/i)).toBeInTheDocument();
+  });
+
+  it('navigates to Integrations & Tools and displays Tool Gateway risk tiers', () => {
+    render(<App />);
+    const toolsLink = screen.getByRole('link', { name: /Integrations & Tools/i });
+    fireEvent.click(toolsLink);
+
+    expect(screen.getByRole('heading', { name: /Tool Gateway & Integrations Registry/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/LOW Risk Tools/i)).toBeInTheDocument();
+    expect(screen.getByText(/HIGH Risk Tools/i)).toBeInTheDocument();
+  });
+
+  it('navigates to Enterprise Admin and verifies branding inputs', () => {
+    render(<App />);
+    const adminLink = screen.getByRole('link', { name: /Enterprise Administration/i });
+    fireEvent.click(adminLink);
+
+    expect(screen.getByRole('heading', { name: /Enterprise Administration/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Company \/ Organization Name/i)).toHaveValue('Acme Global Ltd');
   });
 });

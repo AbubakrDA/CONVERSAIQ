@@ -1,48 +1,142 @@
 import React from 'react';
-import { Settings, Users, Shield, Palette } from 'lucide-react';
+import { Settings, Users, Shield, Palette, Building2, Lock, History } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Tabs, TabList, TabTrigger, TabContent } from '../components/ui';
 
 export const EnterpriseAdminPage: React.FC = () => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-navy">Enterprise Administration</h1>
-          <p className="text-xs text-navy-muted">Phase 13 Platform Module • Tenant settings, custom branding, RBAC, and audit logs</p>
+          <p className="text-xs text-navy-muted">
+            Module J • Tenant Profile, Corporate Branding, Role-Based Access Control, and Immutable Audit Trail
+          </p>
         </div>
-        <span className="px-3 py-1 rounded-pill text-xs font-semibold bg-tealAccent-light text-tealAccent border border-tealAccent-border">
-          Module J Placeholder
-        </span>
+        <div className="flex items-center space-x-2">
+          <Badge variant="teal">Tenant Admin Mode</Badge>
+          <Button variant="primary" size="sm">Save Changes</Button>
+        </div>
       </div>
 
-      <div className="bg-surface rounded-card p-8 border border-border-subtle shadow-card text-center max-w-2xl mx-auto space-y-4 my-8">
-        <div className="w-14 h-14 rounded-full bg-tealAccent-light border border-tealAccent-border text-tealAccent flex items-center justify-center mx-auto">
-          <Settings className="w-7 h-7" />
-        </div>
-        <h2 className="text-xl font-bold text-navy">Tenant Governance & Security Administration</h2>
-        <p className="text-sm text-navy-secondary leading-relaxed">
-          Manage organization profiles, corporate branding and logos, user roles and fine-grained permissions, Keycloak SSO integration, data retention schedules, and immutable security audit logs.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left pt-4">
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <Palette className="w-3.5 h-3.5 text-tealAccent" /> Brand Customization
-            </span>
-            <p className="text-navy-muted">Logos, palettes & domain</p>
-          </div>
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-blueAccent" /> User & Role RBAC
-            </span>
-            <p className="text-navy-muted">Granular permissions</p>
-          </div>
-          <div className="p-3 rounded-standard bg-canvas border border-border-subtle text-xs space-y-1">
-            <span className="font-semibold text-navy flex items-center gap-1">
-              <Shield className="w-3.5 h-3.5 text-status-success" /> Audit Logs
-            </span>
-            <p className="text-navy-muted">Immutable compliance trails</p>
-          </div>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <Tabs defaultValue="branding">
+            <TabList>
+              <TabTrigger value="branding">Organization & Branding</TabTrigger>
+              <TabTrigger value="users">Users & Roles (RBAC)</TabTrigger>
+              <TabTrigger value="audit">Security & Audit Logs</TabTrigger>
+            </TabList>
+
+            {/* Tab 1: Organization & Branding */}
+            <TabContent value="branding">
+              <div className="space-y-6 max-w-2xl py-2">
+                <div className="space-y-4">
+                  <Input
+                    label="Company / Organization Name"
+                    defaultValue="Acme Global Ltd"
+                    helperText="Appears on all customer-facing chat widgets, emails, and PDF reports."
+                  />
+                  <Input
+                    label="Primary Support Domain"
+                    defaultValue="support.acmeglobal.com"
+                    helperText="Custom domain mapped to ConversaIQ CDN."
+                  />
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-navy">Company Logo</label>
+                    <div className="p-4 rounded-standard bg-canvas border border-border-default flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-standard bg-tealAccent-light border border-tealAccent-border text-tealAccent font-bold flex items-center justify-center">
+                          AG
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-navy">acme_logo_primary.svg</p>
+                          <p className="text-[10px] text-navy-muted">Vector SVG • 48x48px</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">Replace Logo</Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabContent>
+
+            {/* Tab 2: Users & RBAC */}
+            <TabContent value="users">
+              <div className="space-y-4 py-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-xs text-navy">Staff & Role Allocations</h3>
+                  <Button size="sm" variant="outline">+ Invite User</Button>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Staff Member</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Permissions Scope</TableHead>
+                      <TableHead>2FA Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-semibold text-navy">Alex Chen (alex@conversaiq.internal)</TableCell>
+                      <TableCell><Badge size="sm" variant="blue">Org Admin</Badge></TableCell>
+                      <TableCell className="text-navy-secondary text-xs">Full Tenant Access & Security Controls</TableCell>
+                      <TableCell><Badge size="sm" variant="success" hasDot>Enforced</Badge></TableCell>
+                      <TableCell><Button size="sm" variant="outline">Edit</Button></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-semibold text-navy">Jessica Taylor (jess@conversaiq.internal)</TableCell>
+                      <TableCell><Badge size="sm" variant="teal">Support Agent</Badge></TableCell>
+                      <TableCell className="text-navy-secondary text-xs">Chat Workspace & Ticket Management</TableCell>
+                      <TableCell><Badge size="sm" variant="success" hasDot>Enforced</Badge></TableCell>
+                      <TableCell><Button size="sm" variant="outline">Edit</Button></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </TabContent>
+
+            {/* Tab 3: Security & Audit Logs */}
+            <TabContent value="audit">
+              <div className="space-y-4 py-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-xs text-navy">Immutable Tenant Security Event Stream</h3>
+                  <Button size="sm" variant="outline">Export Audit Trail (CSV)</Button>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Timestamp (UTC)</TableHead>
+                      <TableHead>Event Action</TableHead>
+                      <TableHead>Actor</TableHead>
+                      <TableHead>Target Resource</TableHead>
+                      <TableHead>Security Result</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-mono text-[11px] text-navy-muted">2026-11-24 07:18:22</TableCell>
+                      <TableCell className="font-semibold text-navy">SYNC_DATA_SOURCE</TableCell>
+                      <TableCell>System Scheduler</TableCell>
+                      <TableCell className="font-mono text-xs">GoogleSheets:Stock</TableCell>
+                      <TableCell><Badge size="sm" variant="success" hasDot>SUCCESS</Badge></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono text-[11px] text-navy-muted">2026-11-24 06:44:10</TableCell>
+                      <TableCell className="font-semibold text-navy">LOGIN_SUCCESS</TableCell>
+                      <TableCell>alex@conversaiq.internal</TableCell>
+                      <TableCell className="font-mono text-xs">Keycloak OIDC</TableCell>
+                      <TableCell><Badge size="sm" variant="success" hasDot>VERIFIED</Badge></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </TabContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
