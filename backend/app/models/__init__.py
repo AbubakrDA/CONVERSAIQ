@@ -10,6 +10,7 @@ from app.models.knowledge import KBCollection, KBDocument, KBChunk
 from app.models.memory import CustomerMemory
 from app.models.ticket import Ticket, TicketNote, Feedback
 from app.models.nlp import QuestionCluster, LoggedQuestion
+from app.models.analytics import AIInsight, OrganizationalMemoryEntry, ExecutiveReport
 
 __all__ = [
     "Base",
@@ -37,4 +38,7 @@ __all__ = [
     "Feedback",
     "QuestionCluster",
     "LoggedQuestion",
+    "AIInsight",
+    "OrganizationalMemoryEntry",
+    "ExecutiveReport",
 ]
