@@ -1,5 +1,17 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, tenants, auth, business_data, chat, documents, knowledge, memory, tickets, nlp
+from app.api.v1.endpoints import (
+    health,
+    tenants,
+    auth,
+    business_data,
+    chat,
+    documents,
+    knowledge,
+    memory,
+    tickets,
+    nlp,
+    analytics,
+)
 
 api_router = APIRouter()
 
@@ -13,3 +25,4 @@ api_router.include_router(knowledge.router, prefix="/knowledge", tags=["Knowledg
 api_router.include_router(memory.router, prefix="/memory", tags=["Customer Memory"])
 api_router.include_router(tickets.router, prefix="/tickets", tags=["Complaints & Tickets"])
 api_router.include_router(nlp.router, prefix="/nlp", tags=["NLP & Question Intelligence"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Admin Intelligence & Analytics"])

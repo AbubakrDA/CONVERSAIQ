@@ -6,6 +6,7 @@ from app.core.security import verify_access_token
 class AuthenticatedUser:
     def __init__(self, user_id: str, email: str, role: str, tenant_id: str):
         self.id = user_id
+        self.user_id = user_id
         self.email = email
         self.role = role
         self.tenant_id = tenant_id
