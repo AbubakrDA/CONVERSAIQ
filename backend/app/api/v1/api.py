@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     analytics,
     tools,
     enterprise,
+    infrastructure,
 )
 
 api_router = APIRouter()
@@ -30,3 +31,4 @@ api_router.include_router(nlp.router, prefix="/nlp", tags=["NLP & Question Intel
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Admin Intelligence & Analytics"])
 api_router.include_router(tools.router, prefix="/tools", tags=["Tools & MCP Gateway"])
 api_router.include_router(enterprise.router, prefix="/enterprise", tags=["Enterprise Administration"])
+api_router.include_router(infrastructure.router, prefix="/infrastructure", tags=["Cloud Infrastructure & Telemetry"])

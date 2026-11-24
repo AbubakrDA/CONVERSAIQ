@@ -1,0 +1,26 @@
+{
+  "family": "conversaiq-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "containerDefinitions": [
+    {
+      "name": "conversaiq-celery-worker",
+      "image": "conversaiq/celery-worker:latest",
+      "essential": true,
+      "command": ["celery", "-A", "app.core.celery", "worker", "--loglevel=info"],
+      "environment": [
+        {"name": "ENVIRONMENT", "value": "production"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/conversaiq-production",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "worker"
+        }
+      }
+    }
+  ]
+}
