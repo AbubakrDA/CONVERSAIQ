@@ -1,4 +1,5 @@
 import uuid
+import json
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
@@ -80,6 +81,7 @@ async def generate_insights(
         db=db,
         generated_by=current_user.user_id,
     )
+    await db.commit()
     return APIResponse.ok(
         data=[AIInsightRead.model_validate(i) for i in insights],
         request_id=getattr(request.state, "request_id", None),
@@ -112,7 +114,7 @@ async def acknowledge_insight(
     insight.is_acknowledged = ack.acknowledged
     insight.acknowledged_by = current_user.user_id
     insight.acknowledged_at = datetime.now(timezone.utc)
-    await db.flush()
+    await db.commit()
 
     return APIResponse.ok(
         data=AIInsightRead.model_validate(insight),
@@ -166,7 +168,7 @@ async def create_organizational_memory(
         status=entry_in.status,
     )
     db.add(entry)
-    await db.flush()
+    await db.commit()
 
     return APIResponse.ok(
         data=OrganizationalMemoryRead.model_validate(entry),
@@ -233,6 +235,7 @@ async def generate_report(
         generated_by=current_user.user_id,
         db=db,
     )
+    await db.commit()
     return APIResponse.ok(
         data=ExecutiveReportRead.model_validate(report),
         request_id=getattr(request.state, "request_id", None),

@@ -28,7 +28,6 @@ class QuestionCluster(TenantScopedModel):
         "LoggedQuestion",
         back_populates="cluster",
         cascade="all, delete-orphan",
-        order_by="LoggedQuestion.created_at.desc",
     )
 
     def __init__(self, **kwargs: Any) -> None:

@@ -35,15 +35,15 @@ class QuestionIntelligenceService:
     @classmethod
     def classify_intent_and_category(cls, text: str) -> Tuple[str, str]:
         lower = text.lower()
-        if any(w in lower for w in ["cost", "price", "pricing", "discount", "fee", "how much", "rate"]):
+        if any(w in lower for w in ["cost", "price", "pricing", "discount", "fee", "how much", "rate", "cuesta", "precio", "kostet", "preis", "coûte", "prix", "سعر", "تكلفة"]):
             return "pricing_inquiry", "sales"
-        elif any(w in lower for w in ["shipping", "track", "delivery", "carrier", "when will", "arrived"]):
+        elif any(w in lower for w in ["shipping", "track", "delivery", "carrier", "when will", "arrived", "envío", "entrega", "lieferung", "livraison", "شحن", "توصيل"]):
             return "shipping_timeline", "logistics"
-        elif any(w in lower for w in ["return", "refund", "exchange", "money back", "cancel"]):
+        elif any(w in lower for w in ["return", "refund", "exchange", "money back", "cancel", "reembolso", "devolución", "rückerstattung", "remboursement", "استرجاع", "استرداد"]):
             return "return_policy", "billing"
-        elif any(w in lower for w in ["appointment", "booking", "schedule", "reschedule", "calendar", "slot"]):
+        elif any(w in lower for w in ["appointment", "booking", "schedule", "reschedule", "calendar", "slot", "cita", "termin", "rendez-vous", "موعد"]):
             return "appointment_booking", "service"
-        elif any(w in lower for w in ["error", "bug", "crash", "password", "login", "broken"]):
+        elif any(w in lower for w in ["error", "bug", "crash", "password", "login", "broken", "fehler", "panne", "خطأ", "عطل"]):
             return "technical_support", "support"
         return "general_faq", "general"
 

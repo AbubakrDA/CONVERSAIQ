@@ -47,7 +47,12 @@ async def prepare_test_db() -> AsyncGenerator[None, None]:
 
 async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
     async with test_async_session() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 app.dependency_overrides[get_db] = override_get_db
