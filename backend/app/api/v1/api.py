@@ -14,6 +14,7 @@ from app.api.v1.endpoints import (
     tools,
     enterprise,
     infrastructure,
+    backup,
 )
 
 api_router = APIRouter()
@@ -32,3 +33,4 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["Admin In
 api_router.include_router(tools.router, prefix="/tools", tags=["Tools & MCP Gateway"])
 api_router.include_router(enterprise.router, prefix="/enterprise", tags=["Enterprise Administration"])
 api_router.include_router(infrastructure.router, prefix="/infrastructure", tags=["Cloud Infrastructure & Telemetry"])
+api_router.include_router(backup.router, prefix="/backup", tags=["Backup & Disaster Recovery"])

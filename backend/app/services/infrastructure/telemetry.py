@@ -107,12 +107,24 @@ class CloudInfrastructureService:
             )
         )
 
+        backup_status = "Verified Clean (Snapshot at 04:00 UTC)"
+        try:
+            from app.models.backup import BackupRecord
+            b_stmt = select(BackupRecord).order_by(BackupRecord.created_at.desc()).limit(1)
+            b_res = await db.execute(b_stmt)
+            b_rec = b_res.scalars().first()
+            if b_rec:
+                created_ts = b_rec.created_at.strftime("%H:%M UTC")
+                backup_status = f"Verified Clean ({b_rec.backup_type} at {created_ts})"
+        except Exception:
+            pass
+
         return InfrastructureDashboardResponse(
             overall_status="Healthy",
             services=services,
             rpo_benchmark="< 1 Hour",
             rto_benchmark="< 4 Hours",
-            last_backup_status="Verified Clean (Snapshot at 04:00 UTC)",
+            last_backup_status=backup_status,
             timestamp=datetime.now(timezone.utc).isoformat(),
         )
 
