@@ -5,6 +5,7 @@ from app.models.user import User
 from app.models.customer import Customer
 from app.models.conversation import Conversation, Message
 from app.models.business import Product, Service, Order, Appointment, DataSource, SyncHistory
+from app.models.document import Document
 
 __all__ = [
     "Base",
@@ -22,4 +23,5 @@ __all__ = [
     "Appointment",
     "DataSource",
     "SyncHistory",
+    "Document",
 ]
