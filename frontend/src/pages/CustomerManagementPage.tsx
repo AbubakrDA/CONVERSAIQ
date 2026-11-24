@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Brain, History, Search, Filter, ShieldCheck, Heart } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input } from '../components/ui';
 
 export const CustomerManagementPage: React.FC = () => {

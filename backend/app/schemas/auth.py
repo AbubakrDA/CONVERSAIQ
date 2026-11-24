@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class LoginRequest(BaseModel):
@@ -18,15 +18,14 @@ class TokenResponse(BaseModel):
 
 
 class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     tenant_id: str
     email: str
     full_name: str
     role: str
     is_active: bool
-
-    class Config:
-        from_attributes = True
 
 
 class UserCreate(BaseModel):

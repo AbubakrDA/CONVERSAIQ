@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, UploadCloud, Search, FileText, CheckCircle2, Clock, Filter } from 'lucide-react';
+import { UploadCloud, Search, FileText, CheckCircle2, Clock, Filter } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Tabs, TabList, TabTrigger, TabContent } from '../components/ui';
 
 export const KnowledgeBasePage: React.FC = () => {

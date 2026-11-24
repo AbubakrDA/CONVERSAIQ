@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cloud, Server, Activity, ShieldCheck, Database, HardDrive, CheckCircle2 } from 'lucide-react';
+import { Server, Activity, ShieldCheck, Database, HardDrive, CheckCircle2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge } from '../components/ui';
 
 export const CloudInfrastructurePage: React.FC = () => {

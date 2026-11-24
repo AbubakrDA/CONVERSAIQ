@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, Server, Lock, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Zap, Lock, AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui';
 
 export const IntegrationsToolsPage: React.FC = () => {

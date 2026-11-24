@@ -44,7 +44,7 @@ describe('ConversaIQ AppShell, Navigation & Module Views Verification (Task 1.4 
     fireEvent.click(chatLink);
 
     expect(screen.getByRole('heading', { name: /AI Customer Support Chat Workspace/i, level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Sarah Jenkins/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Sarah Jenkins/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Customer Context & Memory/i)).toBeInTheDocument();
     expect(screen.getByText(/Grounded in Business Hub/i)).toBeInTheDocument();
   });
@@ -69,7 +69,7 @@ describe('ConversaIQ AppShell, Navigation & Module Views Verification (Task 1.4 
     fireEvent.click(kbLink);
 
     expect(screen.getByRole('heading', { name: /Knowledge Base & RAG Index/i, level: 1 })).toBeInTheDocument();
-    expect(screen.getByText(/Indexed \(pgvector\)/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Indexed \(pgvector\)/i).length).toBeGreaterThan(0);
   });
 
   it('navigates to Integrations & Tools and displays Tool Gateway risk tiers', () => {

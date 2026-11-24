@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, List, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class BusinessModeUpdate(BaseModel):
@@ -26,12 +26,11 @@ class ProductCreate(BaseModel):
 
 
 class ProductRead(ProductCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     tenant_id: str
     is_active: bool
-
-    class Config:
-        from_attributes = True
 
 
 class ServiceCreate(BaseModel):
@@ -44,12 +43,11 @@ class ServiceCreate(BaseModel):
 
 
 class ServiceRead(ServiceCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     tenant_id: str
     is_active: bool
-
-    class Config:
-        from_attributes = True
 
 
 class CSVImportRequest(BaseModel):

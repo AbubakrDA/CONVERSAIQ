@@ -58,9 +58,18 @@ async def update_business_mode(
             detail="Only organization admins can update the business model configuration",
         )
 
-    await db.execute(
-        update(Tenant).where(Tenant.id == current_user.tenant_id).values(business_mode=update_data.mode)
-    )
+    result = await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))
+    tenant = result.scalars().first()
+    if tenant:
+        tenant.business_mode = update_data.mode
+    else:
+        tenant = Tenant(
+            id=current_user.tenant_id,
+            name=f"Tenant {current_user.tenant_id}",
+            slug=current_user.tenant_id,
+            business_mode=update_data.mode,
+        )
+        db.add(tenant)
     await db.commit()
 
     return await get_business_mode(request=request, current_user=current_user, db=db)

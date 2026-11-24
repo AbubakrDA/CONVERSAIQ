@@ -41,6 +41,11 @@ class Conversation(TenantScopedModel):
         order_by="Message.created_at",
     )
 
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("channel", "web")
+        kwargs.setdefault("status", "active")
+        super().__init__(**kwargs)
+
 
 class Message(TenantScopedModel):
     __tablename__ = "messages"
@@ -61,3 +66,8 @@ class Message(TenantScopedModel):
     is_flagged: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     conversation: Mapped["Conversation"] = relationship("Conversation", back_populates="messages")
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("sources", [])
+        kwargs.setdefault("is_flagged", False)
+        super().__init__(**kwargs)

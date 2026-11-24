@@ -1,6 +1,5 @@
 import React from 'react';
-import { Settings, Users, Shield, Palette, Building2, Lock, History } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Tabs, TabList, TabTrigger, TabContent } from '../components/ui';
+import { Card, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Tabs, TabList, TabTrigger, TabContent } from '../components/ui';
 
 export const EnterpriseAdminPage: React.FC = () => {
   return (

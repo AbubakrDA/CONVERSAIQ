@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { LifeBuoy, AlertTriangle, CheckCircle, Clock, Plus, PhoneCall, Mail, MessageSquare } from 'lucide-react';
+import React from 'react';
+import { Clock, Plus, PhoneCall, Mail, MessageSquare } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Tabs, TabList, TabTrigger, TabContent } from '../components/ui';
 
 export const ComplaintsTicketsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('tickets');
 
   return (
     <div className="space-y-6">

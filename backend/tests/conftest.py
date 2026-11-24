@@ -1,3 +1,18 @@
+import os
+import sys
+
+# Ensure backend and pure-python dependencies in .venv are reachable by system Python
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+venv_site = os.path.join(backend_dir, ".venv", "Lib", "site-packages")
+if os.path.exists(venv_site) and venv_site not in sys.path:
+    sys.path.append(venv_site)
+
+# Set test database URL before any application modules are imported
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+
 import pytest
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport

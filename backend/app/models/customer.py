@@ -19,3 +19,8 @@ class Customer(TenantScopedModel):
         back_populates="customer",
         cascade="all, delete-orphan",
     )
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("tier", "standard")
+        kwargs.setdefault("profile_metadata", {})
+        super().__init__(**kwargs)

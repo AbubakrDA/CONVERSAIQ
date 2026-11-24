@@ -25,6 +25,10 @@ class Tenant(TimeStampedModel):
     )
     users: Mapped[list["User"]] = relationship("User", back_populates="tenant", cascade="all, delete-orphan")
 
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("business_mode", "hybrid")
+        super().__init__(**kwargs)
+
 
 class OrganizationSettings(TenantScopedModel):
     __tablename__ = "organization_settings"
