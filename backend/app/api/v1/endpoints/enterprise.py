@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.auth import get_current_user, require_roles, AuthenticatedUser
-from app.core.security import get_password_hash
+from app.core.security import hash_password
 from app.models.enterprise import TenantBranding, AuditLog, TenantSecurityPolicy, ModelRoutingConfig
 from app.models.user import User
 from app.schemas.envelope import APIResponse
@@ -130,7 +130,7 @@ async def invite_staff_user(
             detail={"code": "USER_EXISTS", "message": f"User with email '{invite_in.email}' already exists."},
         )
 
-    hashed_pw = get_password_hash(invite_in.temp_password)
+    hashed_pw = hash_password(invite_in.temp_password)
     user = User(
         id=str(uuid.uuid4()),
         tenant_id=current_user.tenant_id,
