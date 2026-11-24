@@ -7,6 +7,7 @@ from app.models.conversation import Conversation, Message
 from app.models.business import Product, Service, Order, Appointment, DataSource, SyncHistory
 from app.models.document import Document
 from app.models.knowledge import KBCollection, KBDocument, KBChunk
+from app.models.memory import CustomerMemory
 
 __all__ = [
     "Base",
@@ -28,4 +29,5 @@ __all__ = [
     "KBCollection",
     "KBDocument",
     "KBChunk",
+    "CustomerMemory",
 ]
