@@ -8,6 +8,7 @@ from app.models.business import Product, Service, Order, Appointment, DataSource
 from app.models.document import Document
 from app.models.knowledge import KBCollection, KBDocument, KBChunk
 from app.models.memory import CustomerMemory
+from app.models.ticket import Ticket, TicketNote, Feedback
 
 __all__ = [
     "Base",
@@ -30,4 +31,7 @@ __all__ = [
     "KBDocument",
     "KBChunk",
     "CustomerMemory",
+    "Ticket",
+    "TicketNote",
+    "Feedback",
 ]
