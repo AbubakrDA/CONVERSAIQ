@@ -9,6 +9,7 @@ from app.models.document import Document
 from app.models.knowledge import KBCollection, KBDocument, KBChunk
 from app.models.memory import CustomerMemory
 from app.models.ticket import Ticket, TicketNote, Feedback
+from app.models.nlp import QuestionCluster, LoggedQuestion
 
 __all__ = [
     "Base",
@@ -34,4 +35,6 @@ __all__ = [
     "Ticket",
     "TicketNote",
     "Feedback",
+    "QuestionCluster",
+    "LoggedQuestion",
 ]
