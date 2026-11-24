@@ -12,6 +12,7 @@ from app.models.ticket import Ticket, TicketNote, Feedback
 from app.models.nlp import QuestionCluster, LoggedQuestion
 from app.models.analytics import AIInsight, OrganizationalMemoryEntry, ExecutiveReport
 from app.models.tool import ToolExecution, MCPServerConfig
+from app.models.enterprise import TenantBranding, AuditLog, TenantSecurityPolicy, ModelRoutingConfig
 
 __all__ = [
     "Base",
@@ -44,4 +45,8 @@ __all__ = [
     "ExecutiveReport",
     "ToolExecution",
     "MCPServerConfig",
+    "TenantBranding",
+    "AuditLog",
+    "TenantSecurityPolicy",
+    "ModelRoutingConfig",
 ]

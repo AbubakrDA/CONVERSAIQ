@@ -11,6 +11,8 @@ from app.api.v1.endpoints import (
     tickets,
     nlp,
     analytics,
+    tools,
+    enterprise,
 )
 
 api_router = APIRouter()
@@ -26,3 +28,5 @@ api_router.include_router(memory.router, prefix="/memory", tags=["Customer Memor
 api_router.include_router(tickets.router, prefix="/tickets", tags=["Complaints & Tickets"])
 api_router.include_router(nlp.router, prefix="/nlp", tags=["NLP & Question Intelligence"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Admin Intelligence & Analytics"])
+api_router.include_router(tools.router, prefix="/tools", tags=["Tools & MCP Gateway"])
+api_router.include_router(enterprise.router, prefix="/enterprise", tags=["Enterprise Administration"])
