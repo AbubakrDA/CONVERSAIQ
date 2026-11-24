@@ -1,0 +1,181 @@
+services:
+  # 1. FastAPI Application Gateway
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    image: conversaiq/backend:latest
+    container_name: conversaiq-backend-prod
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-prod_secure_pg_pass_2026}
+      - POSTGRES_DB=conversaiq_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - S3_ENDPOINT=http://minio:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - conversaiq-prod-net
+
+  # 2. PostgreSQL 16 with pgvector Extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: conversaiq-postgres-prod
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-prod_secure_pg_pass_2026}
+      - POSTGRES_DB=conversaiq_db
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4096M
+        reservations:
+          cpus: '1.0'
+          memory: 1024M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d conversaiq_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conversaiq-prod-net
+
+  # 3. Redis 7 Cache & Celery Broker
+  redis:
+    image: redis:7-alpine
+    container_name: conversaiq-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_pass_2026}
+    volumes:
+      - redis_prod_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secure_pass_2026}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conversaiq-prod-net
+
+  # 4. Celery Distributed Task Worker
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    image: conversaiq/celery-worker:latest
+    container_name: conversaiq-celery-worker-prod
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-prod_secure_pg_pass_2026}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_pass_2026}
+    depends_on:
+      - redis
+      - postgres
+    command: celery -A app.core.celery worker --loglevel=info --concurrency=4
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+    networks:
+      - conversaiq-prod-net
+
+  # 5. MinIO S3-Compatible Object Storage
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    container_name: conversaiq-minio-prod
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_USER:-minio_admin_prod}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD:-minio_secure_key_2026}
+    volumes:
+      - minio_prod_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - conversaiq-prod-net
+
+  # 6. React Production Web App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    image: conversaiq/frontend:latest
+    container_name: conversaiq-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - conversaiq-prod-net
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  minio_prod_data:
+
+networks:
+  conversaiq-prod-net:
+    driver: bridge
