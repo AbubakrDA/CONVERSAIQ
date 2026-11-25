@@ -31,5 +31,9 @@ class TenantAndLoggingMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Response-Time-Ms"] = str(duration_ms)
         response.headers["X-Tenant-Context"] = str(getattr(request.state, "tenant_id", fallback_tenant))
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 
         return response
