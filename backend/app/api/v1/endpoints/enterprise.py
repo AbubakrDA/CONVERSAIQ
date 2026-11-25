@@ -23,6 +23,7 @@ from app.schemas.enterprise import (
     SessionRevokeResponse,
     AuditLogRead,
     AuditLogExportResponse,
+    AuditLogVerifyResponse,
     ModelRoutingConfigUpdate,
     ModelRoutingConfigRead,
 )
@@ -246,12 +247,27 @@ async def list_audit_logs(
     query = select(AuditLog).where(AuditLog.tenant_id == current_user.tenant_id)
     if event_type:
         query = query.where(AuditLog.event_type == event_type)
-    query = query.order_by(AuditLog.created_at.desc())
+    query = query.order_by(AuditLog.hash_timestamp.desc(), AuditLog.created_at.desc())
     res = await db.execute(query)
     logs = res.scalars().all()
 
     return APIResponse.ok(
         data=[AuditLogRead.model_validate(l) for l in logs],
+        request_id=getattr(request.state, "request_id", None),
+        tenant_id=current_user.tenant_id,
+    )
+
+
+@router.get("/audit-logs/verify", response_model=APIResponse[AuditLogVerifyResponse])
+async def verify_audit_logs(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
+    db: AsyncSession = Depends(get_db),
+) -> APIResponse[AuditLogVerifyResponse]:
+    """Verify cryptographic hash chain integrity of tenant audit logs."""
+    result = await EnterpriseAdminService.verify_audit_chain(current_user.tenant_id, db)
+    return APIResponse.ok(
+        data=AuditLogVerifyResponse(**result),
         request_id=getattr(request.state, "request_id", None),
         tenant_id=current_user.tenant_id,
     )

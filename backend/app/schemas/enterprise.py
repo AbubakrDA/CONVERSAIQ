@@ -111,8 +111,17 @@ class AuditLogRead(BaseModel):
     user_agent: Optional[str] = None
     status: str
     details: Optional[Dict[str, Any]] = None
+    prev_hash: Optional[str] = None
     event_hash: str
     created_at: datetime
+
+
+class AuditLogVerifyResponse(BaseModel):
+    valid: bool
+    total_records: int
+    broken_index: Optional[int] = None
+    broken_id: Optional[str] = None
+    reason: Optional[str] = None
 
 
 class AuditLogExportResponse(BaseModel):

@@ -40,14 +40,39 @@ class AuditLog(TenantScopedModel):
     user_agent: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="SUCCESS", nullable=False)
     details: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+    prev_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    hash_timestamp: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     event_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    @staticmethod
+    def compute_event_hash(
+        prev_hash: str,
+        tenant_id: str,
+        actor_id: str,
+        event_type: str,
+        target_resource: str,
+        status: str,
+        hash_timestamp: str,
+    ) -> str:
+        raw = f"{prev_hash}:{tenant_id}:{actor_id}:{event_type}:{target_resource}:{status}:{hash_timestamp}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     def __init__(self, **kwargs: Any) -> None:
         kwargs.setdefault("actor_role", "agent")
         kwargs.setdefault("status", "SUCCESS")
+        kwargs.setdefault("prev_hash", "0" * 64)
+        if "hash_timestamp" not in kwargs or kwargs["hash_timestamp"] is None:
+            kwargs["hash_timestamp"] = datetime.now(timezone.utc).isoformat()
         if "event_hash" not in kwargs:
-            raw = f"{kwargs.get('tenant_id')}:{kwargs.get('actor_id')}:{kwargs.get('event_type')}:{kwargs.get('target_resource')}:{datetime.now(timezone.utc).isoformat()}"
-            kwargs["event_hash"] = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+            kwargs["event_hash"] = self.compute_event_hash(
+                prev_hash=kwargs["prev_hash"],
+                tenant_id=str(kwargs.get("tenant_id")),
+                actor_id=str(kwargs.get("actor_id")),
+                event_type=str(kwargs.get("event_type")),
+                target_resource=str(kwargs.get("target_resource")),
+                status=str(kwargs["status"]),
+                hash_timestamp=str(kwargs["hash_timestamp"]),
+            )
         super().__init__(**kwargs)
 
 

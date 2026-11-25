@@ -43,10 +43,29 @@ class EnterpriseAdminService:
         details: Optional[Dict[str, Any]] = None,
         db: Optional[AsyncSession] = None,
     ) -> AuditLog:
-        """Record an immutable, tamper-evident audit trail event."""
+        """Record an immutable, tamper-evident chained audit trail event."""
         now_iso = datetime.now(timezone.utc).isoformat()
-        hash_payload = f"{tenant_id}:{actor_id}:{event_type}:{target_resource}:{status}:{now_iso}"
-        event_hash = hashlib.sha256(hash_payload.encode("utf-8")).hexdigest()
+        prev_hash = "0" * 64
+        if db:
+            latest_res = await db.execute(
+                select(AuditLog)
+                .where(AuditLog.tenant_id == tenant_id)
+                .order_by(AuditLog.hash_timestamp.desc(), AuditLog.created_at.desc(), AuditLog.id.desc())
+                .limit(1)
+            )
+            latest_entry = latest_res.scalar_one_or_none()
+            if latest_entry is not None:
+                prev_hash = latest_entry.event_hash
+
+        event_hash = AuditLog.compute_event_hash(
+            prev_hash=prev_hash,
+            tenant_id=tenant_id,
+            actor_id=actor_id,
+            event_type=event_type,
+            target_resource=target_resource,
+            status=status,
+            hash_timestamp=now_iso,
+        )
 
         entry = AuditLog(
             id=str(uuid.uuid4()),
@@ -60,12 +79,60 @@ class EnterpriseAdminService:
             user_agent=user_agent,
             status=status,
             details=details or {},
+            prev_hash=prev_hash,
+            hash_timestamp=now_iso,
             event_hash=event_hash,
         )
         if db:
             db.add(entry)
             await db.flush()
         return entry
+
+    @classmethod
+    async def verify_audit_chain(cls, tenant_id: str, db: AsyncSession) -> Dict[str, Any]:
+        """Verify cryptographic prev_hash and event_hash integrity across all tenant audit logs."""
+        res = await db.execute(
+            select(AuditLog)
+            .where(AuditLog.tenant_id == tenant_id)
+            .order_by(AuditLog.hash_timestamp.asc(), AuditLog.created_at.asc(), AuditLog.id.asc())
+        )
+        logs = res.scalars().all()
+        expected_prev = "0" * 64
+        for idx, entry in enumerate(logs):
+            if entry.prev_hash != expected_prev:
+                return {
+                    "valid": False,
+                    "total_records": len(logs),
+                    "broken_index": idx,
+                    "broken_id": entry.id,
+                    "reason": "prev_hash_mismatch",
+                }
+            if entry.hash_timestamp is not None:
+                recomputed = AuditLog.compute_event_hash(
+                    prev_hash=entry.prev_hash or ("0" * 64),
+                    tenant_id=entry.tenant_id,
+                    actor_id=entry.actor_id,
+                    event_type=entry.event_type,
+                    target_resource=entry.target_resource,
+                    status=entry.status,
+                    hash_timestamp=entry.hash_timestamp,
+                )
+                if recomputed != entry.event_hash:
+                    return {
+                        "valid": False,
+                        "total_records": len(logs),
+                        "broken_index": idx,
+                        "broken_id": entry.id,
+                        "reason": "event_hash_mismatch",
+                    }
+            expected_prev = entry.event_hash
+        return {
+            "valid": True,
+            "total_records": len(logs),
+            "broken_index": None,
+            "broken_id": None,
+            "reason": None,
+        }
 
     @classmethod
     async def get_or_create_branding(cls, tenant_id: str, db: AsyncSession) -> TenantBranding:

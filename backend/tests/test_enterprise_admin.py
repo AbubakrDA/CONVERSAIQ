@@ -202,3 +202,54 @@ async def test_strict_multi_tenant_isolation_enterprise(client: AsyncClient) -> 
     b_users_res = await client.get("/api/v1/enterprise/users", headers=headers_b)
     assert b_users_res.status_code == 200
     assert not any("alpha_exclusive" in u["email"] for u in b_users_res.json()["data"])
+
+
+@pytest.mark.asyncio
+async def test_audit_log_hash_chain_and_tamper_detection(client: AsyncClient) -> None:
+    """Verify chained SHA-256 audit logs and tamper detection via /audit-logs/verify."""
+    from sqlalchemy import update
+    from app.main import app
+    from app.core.database import get_db
+    from app.models.enterprise import AuditLog
+
+    tenant = f"tenant_chain_{uuid.uuid4().hex[:8]}"
+    token_admin = create_access_token("admin_chain", tenant, "admin", "chain@test.com")
+    headers_admin = {"Authorization": f"Bearer {token_admin}"}
+
+    for color in ("#111111", "#222222", "#333333"):
+        r = await client.patch(
+            "/api/v1/enterprise/branding",
+            headers=headers_admin,
+            json={"primary_color": color, "accent_color": "#444444"},
+        )
+        assert r.status_code == 200
+
+    verify_res = await client.get("/api/v1/enterprise/audit-logs/verify", headers=headers_admin)
+    assert verify_res.status_code == 200
+    vdata = verify_res.json()["data"]
+    assert vdata["valid"] is True
+    assert vdata["total_records"] == 3
+
+    logs_res = await client.get("/api/v1/enterprise/audit-logs", headers=headers_admin)
+    assert logs_res.status_code == 200
+    logs = logs_res.json()["data"]
+    assert logs[0]["prev_hash"] == logs[1]["event_hash"]
+    assert logs[1]["prev_hash"] == logs[2]["event_hash"]
+    assert logs[2]["prev_hash"] == "0" * 64
+
+    target_id = logs[1]["id"]
+    async for db in app.dependency_overrides[get_db]():
+        await db.execute(
+            update(AuditLog)
+            .where(AuditLog.id == target_id)
+            .values(target_resource="tampered_resource")
+        )
+        await db.commit()
+        break
+
+    tamper_res = await client.get("/api/v1/enterprise/audit-logs/verify", headers=headers_admin)
+    assert tamper_res.status_code == 200
+    tdata = tamper_res.json()["data"]
+    assert tdata["valid"] is False
+    assert tdata["broken_id"] == target_id
+    assert tdata["reason"] == "event_hash_mismatch"
