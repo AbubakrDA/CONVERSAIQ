@@ -167,3 +167,93 @@ resource "aws_cloudwatch_log_group" "ecs_logs" {
   name              = "/ecs/conversaiq-${var.environment}"
   retention_in_days = 90
 }
+
+# ==========================================
+# 6. Amazon ECR Repositories
+# ==========================================
+resource "aws_ecr_repository" "backend" {
+  name                 = "conversaiq-${var.environment}-backend"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "frontend" {
+  name                 = "conversaiq-${var.environment}-frontend"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+# ==========================================
+# 7. Amazon ElastiCache Redis 7 (TLS)
+# ==========================================
+resource "aws_elasticache_subnet_group" "redis" {
+  name       = "conversaiq-${var.environment}-redis-subnet"
+  subnet_ids = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+}
+
+resource "aws_elasticache_replication_group" "redis" {
+  replication_group_id       = "conversaiq-${var.environment}-redis"
+  description                = "ConversaIQ Redis 7 TLS cluster"
+  engine                     = "redis"
+  engine_version             = "7.1"
+  node_type                  = "cache.t4g.medium"
+  num_cache_clusters         = 2
+  port                       = 6379
+  subnet_group_name          = aws_elasticache_subnet_group.redis.name
+  transit_encryption_enabled = true
+  at_rest_encryption_enabled = true
+}
+
+# ==========================================
+# 8. Application Load Balancer (ALB + TLS)
+# ==========================================
+resource "aws_lb" "main" {
+  name               = "conversaiq-${var.environment}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+}
+
+resource "aws_lb_target_group" "backend" {
+  name        = "conversaiq-${var.environment}-api-tg"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/api/v1/health"
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    interval            = 30
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  count             = var.acm_certificate_arn != "" ? 1 : 0
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.acm_certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend.arn
+  }
+}
+
+# ==========================================
+# 9. AWS Secrets Manager
+# ==========================================
+resource "aws_secretsmanager_secret" "app_secrets" {
+  name        = "conversaiq/${var.environment}/app-secrets"
+  description = "ConversaIQ runtime secrets (DATABASE_URL, REDIS_URL, SECRET_KEY, GEMINI_API_KEY)"
+}

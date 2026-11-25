@@ -27,3 +27,15 @@ variable "domain_name" {
   default     = "conversaiq.com"
   description = "Apex domain name for CloudFront and ALB Route 53 records"
 }
+
+variable "staging_subdomain" {
+  type        = string
+  default     = "staging.conversaiq.com"
+  description = "Staging subdomain for ALB and Route 53"
+}
+
+variable "acm_certificate_arn" {
+  type        = string
+  default     = ""
+  description = "ACM TLS 1.3 Certificate ARN for HTTPS listener"
+}

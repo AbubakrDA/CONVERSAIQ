@@ -99,8 +99,24 @@ aws ecs update-service \
 - Live Infrastructure Dashboard: `GET /api/v1/infrastructure/dashboard` -> Returns status across all 6 core services and RPO/RTO metrics.
 - Backup Status: `GET /api/v1/backup/status` -> Returns live backup compliance and GFS rotation state.
 
-### Automated Rollback Criteria
+### Automated Rollback Criteria & Execution
 An automated deployment rollback is triggered immediately if:
 1. ALB target health checks fail for > 120 seconds.
 2. Container error rate spikes above 1% over a 5-minute rolling window.
 3. Database connection pool errors or timeouts are encountered.
+
+To execute a manual rollback from `WINDOWS_LOCAL` PowerShell:
+```powershell
+.\scripts\deploy\Invoke-StagingVerification.ps1 `
+  -StagingBaseUrl "https://staging.conversaiq.com" `
+  -RehearseRollback `
+  -PreviousTaskDefinitionArn "arn:aws:ecs:us-east-1:123456789012:task-definition/conversaiq-staging-web:PREV_REV"
+```
+
+---
+
+## 4. Environment Selection Mechanism
+All environments share the exact same Terraform manifests, Dockerfiles, and verification scripts:
+- `WINDOWS_LOCAL` *(Default)*: Run `.\scripts\deploy\Select-Environment.ps1 -Environment WINDOWS_LOCAL` and `.\scripts\deploy\Deploy-Staging.ps1`.
+- `GITHUB_ACTIONS` *(Optional CI/CD)*: Trigger `.github/workflows/staging-deploy.yml` via `workflow_dispatch`.
+- `AWS_CLOUDSHELL` *(Optional AWS Shell)*: Follow `docs/cloudshell_deployment.md`.
