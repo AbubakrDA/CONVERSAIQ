@@ -45,13 +45,14 @@ def create_access_token(
     else:
         exp = now + (settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
 
-    header = {"alg": "HS256", "typ": "JWT"}
+    header = {"alg": settings.ALGORITHM, "typ": "JWT"}
     payload = {
         "sub": subject,
         "tenant_id": tenant_id,
         "role": role,
         "email": email,
-        "iss": "conversaiq-auth",
+        "iss": settings.JWT_ISSUER,
+        "aud": settings.JWT_AUDIENCE,
         "iat": now,
         "exp": exp,
     }
@@ -71,11 +72,25 @@ def create_access_token(
 
 def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
     try:
+        if settings.ENVIRONMENT in ("production", "staging") or not settings.ALLOW_DEV_STATIC_JWT_SECRET:
+            # Production/staging must validate RS256 tokens against Keycloak JWKS (never static shared secret)
+            return None
+
         parts = token.split(".")
         if len(parts) != 3:
             return None
 
         encoded_header, encoded_payload, encoded_signature = parts
+        if not encoded_signature:
+            return None
+
+        header = json.loads(_base64url_decode(encoded_header).decode("utf-8"))
+        alg = header.get("alg")
+        if not alg or str(alg).lower() == "none" or alg != settings.ALGORITHM:
+            return None
+        if header.get("typ") != "JWT":
+            return None
+
         signing_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
         expected_sig = hmac.new(settings.SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256).digest()
         actual_sig = _base64url_decode(encoded_signature)
@@ -86,8 +101,12 @@ def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
         payload_bytes = _base64url_decode(encoded_payload)
         payload = json.loads(payload_bytes.decode("utf-8"))
 
-        # Verify expiration
+        # Verify expiration, issuer, and audience
         if payload.get("exp", 0) < int(time.time()):
+            return None
+        if payload.get("iss") != settings.JWT_ISSUER:
+            return None
+        if payload.get("aud") != settings.JWT_AUDIENCE:
             return None
 
         return payload

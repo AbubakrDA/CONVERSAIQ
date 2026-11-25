@@ -163,7 +163,12 @@ def test_production_secret_key_guard() -> None:
         with pytest.raises(ValueError, match="SECRET_KEY must be overridden"):
             Settings(ENVIRONMENT=env_name, SECRET_KEY="short_secret")
 
-    prod_ok = Settings(ENVIRONMENT="production", SECRET_KEY="x" * 32)
+    prod_ok = Settings(
+        ENVIRONMENT="production",
+        SECRET_KEY="x" * 32,
+        ALLOW_DEV_STATIC_JWT_SECRET=False,
+        KEYCLOAK_JWKS_URL="https://keycloak.example.com/realms/conversaiq/protocol/openid-connect/certs",
+    )
     assert prod_ok.ENVIRONMENT == "production"
 
 

@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="conversaiq-dev-secret-key-change-in-production-min32chars")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_ISSUER: str = Field(default="conversaiq-auth")
+    JWT_AUDIENCE: str = Field(default="conversaiq-api")
+    KEYCLOAK_JWKS_URL: str | None = Field(default=None)
+    ALLOW_DEV_STATIC_JWT_SECRET: bool = Field(
+        default=True,
+        description="Dev/test-only HS256 static secret toggle; forbidden in staging/production.",
+    )
 
     # Tenant Scoping
     TENANT_HEADER_NAME: str = "X-Tenant-ID"
@@ -78,6 +85,15 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Security Violation: SECRET_KEY must be overridden with a 32+ char secret in staging/production."
                 )
+            if self.ALLOW_DEV_STATIC_JWT_SECRET:
+                raise ValueError(
+                    "Security Violation: ALLOW_DEV_STATIC_JWT_SECRET must be False in staging/production."
+                )
+            if not self.KEYCLOAK_JWKS_URL:
+                raise ValueError(
+                    "Security Violation: KEYCLOAK_JWKS_URL must be configured in staging/production."
+                )
+        return self
         return self
 
 

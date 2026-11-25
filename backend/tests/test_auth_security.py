@@ -164,3 +164,74 @@ async def test_strict_multi_tenant_isolation(client: AsyncClient) -> None:
     users_in_a = res_a.json()["data"]
     emails_in_a = [u["email"] for u in users_in_a]
     assert "secret_agent@company-a.com" in emails_in_a
+
+
+def _craft_raw_jwt(header: dict, payload: dict, sign: bool = True) -> str:
+    import json
+    import hmac
+    import hashlib
+    from app.core.security import _base64url_encode
+    from app.core.config import settings
+
+    h = _base64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
+    p = _base64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    if not sign:
+        return f"{h}.{p}."
+    sig = hmac.new(settings.SECRET_KEY.encode("utf-8"), f"{h}.{p}".encode("utf-8"), hashlib.sha256).digest()
+    return f"{h}.{p}.{_base64url_encode(sig)}"
+
+
+def test_jwt_validation_edge_cases() -> None:
+    """Verify alg:none, wrong alg, unsigned, wrong iss, wrong aud, and prod static-secret rejection."""
+    import time
+    from app.core.security import verify_access_token
+    from app.core.config import Settings, settings
+
+    now = int(time.time())
+    base_payload = {
+        "sub": "u1",
+        "tenant_id": "t1",
+        "role": "agent",
+        "email": "u1@test.com",
+        "iss": settings.JWT_ISSUER,
+        "aud": settings.JWT_AUDIENCE,
+        "iat": now,
+        "exp": now + 300,
+    }
+
+    # 1. Valid token
+    valid = create_access_token("u1", "t1", "agent", "u1@test.com")
+    assert verify_access_token(valid) is not None
+
+    # 2. alg: none (signed and unsigned)
+    assert verify_access_token(_craft_raw_jwt({"alg": "none", "typ": "JWT"}, base_payload, sign=False)) is None
+    assert verify_access_token(_craft_raw_jwt({"alg": "none", "typ": "JWT"}, base_payload, sign=True)) is None
+
+    # 3. Wrong algorithm (e.g. HS512 / RS256)
+    assert verify_access_token(_craft_raw_jwt({"alg": "HS512", "typ": "JWT"}, base_payload, sign=True)) is None
+    assert verify_access_token(_craft_raw_jwt({"alg": "RS256", "typ": "JWT"}, base_payload, sign=True)) is None
+
+    # 4. Unsigned HS256 token
+    assert verify_access_token(_craft_raw_jwt({"alg": "HS256", "typ": "JWT"}, base_payload, sign=False)) is None
+
+    # 5. Wrong issuer
+    assert verify_access_token(_craft_raw_jwt({"alg": "HS256", "typ": "JWT"}, {**base_payload, "iss": "evil"}, sign=True)) is None
+
+    # 6. Wrong audience
+    assert verify_access_token(_craft_raw_jwt({"alg": "HS256", "typ": "JWT"}, {**base_payload, "aud": "wrong"}, sign=True)) is None
+
+    # 7. Production rejects static JWT secret flag or missing Keycloak JWKS URL
+    with pytest.raises(ValueError, match="ALLOW_DEV_STATIC_JWT_SECRET"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="x" * 32,
+            ALLOW_DEV_STATIC_JWT_SECRET=True,
+            KEYCLOAK_JWKS_URL="https://keycloak.example.com/certs",
+        )
+    with pytest.raises(ValueError, match="KEYCLOAK_JWKS_URL"):
+        Settings(
+            ENVIRONMENT="production",
+            SECRET_KEY="x" * 32,
+            ALLOW_DEV_STATIC_JWT_SECRET=False,
+            KEYCLOAK_JWKS_URL=None,
+        )
