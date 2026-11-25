@@ -18,7 +18,7 @@ $ErrorActionPreference = "Continue"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "CONVERSAIQ PHASE 18.2 — MULTI-MODE READINESS CHECK" -ForegroundColor Cyan
+Write-Host "CONVERSAIQ PHASE 18.2 - MULTI-MODE READINESS CHECK" -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Cyan
 
 $selection = & "$scriptDir\Select-Environment.ps1" -Environment $Environment -Mode $Mode

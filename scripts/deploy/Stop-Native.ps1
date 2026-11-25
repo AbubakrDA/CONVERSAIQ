@@ -1,11 +1,15 @@
 <#
 .SYNOPSIS
-    Stop ConversaIQ Native Production Processes
+    Stop ConversaIQ Native Production Processes Gracefully
 #>
 $ErrorActionPreference = "Continue"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path "$scriptDir\..\.."
 $runDir = "$repoRoot\.run"
+
+if (Test-Path $runDir) {
+    "stop" | Out-File -FilePath "$runDir\stop.flag" -Encoding ascii -Force
+}
 
 foreach ($svc in @("backend", "frontend")) {
     $pidFile = "$runDir\$svc.pid"

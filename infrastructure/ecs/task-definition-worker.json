@@ -4,14 +4,20 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
   "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/conversaiq-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/conversaiq-ecs-task-role",
   "containerDefinitions": [
     {
       "name": "conversaiq-celery-worker",
-      "image": "conversaiq/celery-worker:latest",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/conversaiq-staging-backend:latest",
       "essential": true,
       "command": ["celery", "-A", "app.core.celery", "worker", "--loglevel=info"],
       "environment": [
         {"name": "ENVIRONMENT", "value": "production"}
+      ],
+      "secrets": [
+        {"name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:conversaiq/staging/app-secrets:DATABASE_URL::"},
+        {"name": "REDIS_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:conversaiq/staging/app-secrets:REDIS_URL::"}
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
