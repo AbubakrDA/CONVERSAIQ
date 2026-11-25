@@ -57,6 +57,8 @@ async def execute_tool(
             caller_id=caller_id,
             parameters=exec_in.parameters,
             db=db,
+            requested_by_user_id=current_user.id,
+            requested_by_role=current_user.role,
         )
         await db.commit()
         return APIResponse.ok(
@@ -129,7 +131,7 @@ async def get_execution_detail(
 async def approve_tool_execution(
     execution_id: str,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles(["owner", "admin"])),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ToolExecuteResponse]:
     """Supervisor approval gate: approves and executes a pending high-risk tool call."""
@@ -146,6 +148,11 @@ async def approve_tool_execution(
             request_id=getattr(request.state, "request_id", None),
             tenant_id=current_user.tenant_id,
         )
+    except PermissionError as pe:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "SELF_APPROVAL_FORBIDDEN", "message": str(pe)},
+        )
     except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -158,7 +165,7 @@ async def reject_tool_execution(
     execution_id: str,
     decision_in: ToolApprovalDecisionRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles(["owner", "admin"])),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ToolExecuteResponse]:
     """Supervisor rejection gate: rejects a pending high-risk tool call."""
@@ -175,6 +182,11 @@ async def reject_tool_execution(
             data=resp,
             request_id=getattr(request.state, "request_id", None),
             tenant_id=current_user.tenant_id,
+        )
+    except PermissionError as pe:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "SELF_APPROVAL_FORBIDDEN", "message": str(pe)},
         )
     except ValueError as ve:
         raise HTTPException(

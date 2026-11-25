@@ -1,5 +1,5 @@
-from typing import Dict, Any, List, Callable
-from fastapi import Header, HTTPException, status, Request
+from typing import Callable, Union, Sequence
+from fastapi import Depends, Header, HTTPException, status, Request
 from app.core.security import verify_access_token
 
 
@@ -46,12 +46,19 @@ async def get_current_user(
     return user
 
 
-def require_roles(*allowed_roles: str) -> Callable[[AuthenticatedUser], AuthenticatedUser]:
-    def role_checker(current_user: AuthenticatedUser = None) -> AuthenticatedUser:
-        if current_user.role not in allowed_roles:
+def require_roles(*allowed_roles: Union[str, Sequence[str]]) -> Callable[..., AuthenticatedUser]:
+    flat_roles: set[str] = set()
+    for item in allowed_roles:
+        if isinstance(item, str):
+            flat_roles.add(item)
+        else:
+            flat_roles.update(item)
+
+    def role_checker(current_user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
+        if current_user.role not in flat_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied: User role '{current_user.role}' lacks required permissions ({', '.join(allowed_roles)})",
+                detail=f"Access denied: User role '{current_user.role}' lacks required permissions ({', '.join(sorted(flat_roles))})",
             )
         return current_user
 

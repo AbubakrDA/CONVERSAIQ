@@ -186,3 +186,61 @@ async def test_strict_multi_tenant_isolation_tools(client: AsyncClient) -> None:
     # Tenant Beta tries to fetch Tenant Alpha's execution directly -> 404
     direct_fetch = await client.get(f"/api/v1/tools/executions/{exec_a_id}", headers=headers_b)
     assert direct_fetch.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_non_admin_cannot_approve_or_reject_tool(client: AsyncClient) -> None:
+    token_agent = create_access_token("agent_gate_01", "tenant_gate_01", "agent", "agentgate@test.com")
+    headers_agent = {"Authorization": f"Bearer {token_agent}"}
+
+    exec_res = await client.post(
+        "/api/v1/tools/execute",
+        headers=headers_agent,
+        json={"tool_name": "cancel_order", "parameters": {"order_number": "ORD-999"}},
+    )
+    assert exec_res.status_code == 200
+    execution_id = exec_res.json()["data"]["execution_id"]
+
+    appr_res = await client.post(f"/api/v1/tools/executions/{execution_id}/approve", headers=headers_agent)
+    assert appr_res.status_code == 403
+
+    rej_res = await client.post(
+        f"/api/v1/tools/executions/{execution_id}/reject",
+        headers=headers_agent,
+        json={"decision": "reject", "reason": "self reject attempt"},
+    )
+    assert rej_res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_self_approval_rejected_with_403(client: AsyncClient) -> None:
+    token_admin1 = create_access_token("admin_req_01", "tenant_self_01", "admin", "admin1@self.com")
+    token_admin2 = create_access_token("admin_sup_02", "tenant_self_01", "admin", "admin2@self.com")
+    headers_1 = {"Authorization": f"Bearer {token_admin1}"}
+    headers_2 = {"Authorization": f"Bearer {token_admin2}"}
+
+    # Admin 1 requests a high-risk tool
+    exec_res = await client.post(
+        "/api/v1/tools/execute",
+        headers=headers_1,
+        json={"tool_name": "process_refund", "parameters": {"order_number": "ORD-SELF-1", "amount": 50.0}},
+    )
+    assert exec_res.status_code == 200
+    execution_id = exec_res.json()["data"]["execution_id"]
+
+    # Admin 1 cannot self-approve or self-reject -> 403 SELF_APPROVAL_FORBIDDEN
+    self_appr = await client.post(f"/api/v1/tools/executions/{execution_id}/approve", headers=headers_1)
+    assert self_appr.status_code == 403
+    assert "SELF_APPROVAL_FORBIDDEN" in str(self_appr.json())
+
+    self_rej = await client.post(
+        f"/api/v1/tools/executions/{execution_id}/reject",
+        headers=headers_1,
+        json={"decision": "reject", "reason": "nope"},
+    )
+    assert self_rej.status_code == 403
+
+    # Admin 2 (distinct supervisor) CAN approve
+    sup_appr = await client.post(f"/api/v1/tools/executions/{execution_id}/approve", headers=headers_2)
+    assert sup_appr.status_code == 200
+    assert sup_appr.json()["data"]["status"] == "success"
