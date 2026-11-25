@@ -58,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
       {/* Sidebar Container */}
       <aside
+        aria-label="Primary navigation sidebar"
         className={`fixed md:sticky top-0 left-0 h-screen bg-surface border-r border-border-subtle flex flex-col justify-between z-50 transition-all duration-300 shadow-subtle ${
           collapsed ? 'w-20' : 'w-64'
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}

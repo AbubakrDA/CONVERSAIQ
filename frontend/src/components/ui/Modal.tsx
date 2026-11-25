@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -18,13 +18,30 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-dialog-title"
+    >
       {/* Backdrop */}
       <div
         onClick={onClose}
+        aria-hidden="true"
         className="fixed inset-0 bg-navy-900/50 backdrop-blur-sm transition-opacity"
       />
 
@@ -33,7 +50,7 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Header */}
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-navy">{title}</h3>
+            <h3 id="modal-dialog-title" className="text-base font-bold text-navy">{title}</h3>
             {description && <p className="text-xs text-navy-muted mt-0.5">{description}</p>}
           </div>
           <button
