@@ -42,3 +42,11 @@ target-version = "py312"
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "alembic/*"]
+
+[tool.coverage.report]
+fail_under = 74
+show_missing = true
