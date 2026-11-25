@@ -153,14 +153,34 @@ async def test_ssrf_and_private_network_isolation(client: AsyncClient) -> None:
 
 
 def test_production_secret_key_guard() -> None:
-    """Verify Settings rejects default dev SECRET_KEY in staging/production."""
+    """Verify Settings rejects default dev SECRET_KEY in both staging and production."""
     from app.core.config import Settings
 
-    with pytest.raises(ValueError, match="SECRET_KEY must be overridden"):
-        Settings(ENVIRONMENT="production")
+    for env_name in ("staging", "production"):
+        with pytest.raises(ValueError, match="SECRET_KEY must be overridden"):
+            Settings(ENVIRONMENT=env_name)
+
+        with pytest.raises(ValueError, match="SECRET_KEY must be overridden"):
+            Settings(ENVIRONMENT=env_name, SECRET_KEY="short_secret")
 
     prod_ok = Settings(ENVIRONMENT="production", SECRET_KEY="x" * 32)
     assert prod_ok.ENVIRONMENT == "production"
+
+
+def test_production_openapi_docs_disabled() -> None:
+    """Verify OpenAPI/Swagger endpoints are disabled when ENVIRONMENT=production."""
+    from app.core.config import settings
+    from app.main import create_application
+
+    orig_env = settings.ENVIRONMENT
+    try:
+        settings.ENVIRONMENT = "production"
+        prod_app = create_application()
+        assert prod_app.docs_url is None
+        assert prod_app.redoc_url is None
+        assert prod_app.openapi_url is None
+    finally:
+        settings.ENVIRONMENT = orig_env
 
 
 @pytest.mark.asyncio

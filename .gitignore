@@ -51,6 +51,7 @@ temp/
 quarantine/
 uploads/
 storage/
+backend/app/storage_data/
 
 # Keep evidence directories
 !engineering/evidence/**/.gitkeep
