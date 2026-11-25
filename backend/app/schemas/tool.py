@@ -47,6 +47,8 @@ class ToolExecutionRead(BaseModel):
     tool_name: str
     caller_agent: str
     caller_id: str
+    requested_by_user_id: Optional[str] = None
+    requested_by_role: Optional[str] = None
     risk_level: str
     status: str
     input_parameters: Dict[str, Any]

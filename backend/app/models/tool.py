@@ -16,6 +16,8 @@ class ToolExecution(TenantScopedModel):
         comment="customer_support_agent | billing_agent | supervisor_agent | admin_copilot",
     )
     caller_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    requested_by_user_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    requested_by_role: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     risk_level: Mapped[str] = mapped_column(
         String(32),
         default="LOW",

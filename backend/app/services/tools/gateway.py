@@ -173,6 +173,8 @@ class ToolGatewayService:
         caller_id: str,
         parameters: Dict[str, Any],
         db: AsyncSession,
+        requested_by_user_id: Optional[str] = None,
+        requested_by_role: Optional[str] = None,
     ) -> ToolExecuteResponse:
         """
         Execute tool through Governed Gateway:
@@ -197,6 +199,8 @@ class ToolGatewayService:
                 tool_name=tool_name,
                 caller_agent=caller_agent,
                 caller_id=caller_id,
+                requested_by_user_id=requested_by_user_id,
+                requested_by_role=requested_by_role,
                 risk_level=risk_level,
                 status="requires_approval",
                 input_parameters=parameters,
@@ -278,6 +282,10 @@ class ToolGatewayService:
             raise ValueError(f"Tool execution '{execution_id}' not found.")
         if execution.status != "requires_approval":
             raise ValueError(f"Tool execution is in '{execution.status}' status, cannot be approved.")
+        if (execution.requested_by_user_id and execution.requested_by_user_id == approver_id) or (
+            not execution.requested_by_user_id and execution.caller_id == approver_id
+        ):
+            raise PermissionError("SELF_APPROVAL_FORBIDDEN: Approver cannot be the same user who requested the tool execution.")
 
         # Execute high-risk handler
         raw_result, error_msg = await cls._dispatch_internal_tool(
@@ -329,6 +337,10 @@ class ToolGatewayService:
             raise ValueError(f"Tool execution '{execution_id}' not found.")
         if execution.status != "requires_approval":
             raise ValueError(f"Tool execution is in '{execution.status}' status, cannot be rejected.")
+        if (execution.requested_by_user_id and execution.requested_by_user_id == approver_id) or (
+            not execution.requested_by_user_id and execution.caller_id == approver_id
+        ):
+            raise PermissionError("SELF_APPROVAL_FORBIDDEN: Approver cannot reject their own tool execution request.")
 
         execution.status = "rejected"
         execution.approved_by = approver_id
