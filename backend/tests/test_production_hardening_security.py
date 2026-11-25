@@ -150,3 +150,23 @@ async def test_ssrf_and_private_network_isolation(client: AsyncClient) -> None:
 
     # Verify tool registry validates against internal private network exfiltration
     assert ToolGatewayService is not None
+
+
+def test_production_secret_key_guard() -> None:
+    """Verify Settings rejects default dev SECRET_KEY in staging/production."""
+    from app.core.config import Settings
+
+    with pytest.raises(ValueError, match="SECRET_KEY must be overridden"):
+        Settings(ENVIRONMENT="production")
+
+    prod_ok = Settings(ENVIRONMENT="production", SECRET_KEY="x" * 32)
+    assert prod_ok.ENVIRONMENT == "production"
+
+
+@pytest.mark.asyncio
+async def test_api_security_headers_present(client: AsyncClient) -> None:
+    """Verify FastAPI responses include hardened security headers."""
+    res = await client.get("/api/v1/health")
+    assert res.status_code == 200
+    assert res.headers.get("X-Content-Type-Options") == "nosniff"
+    assert res.headers.get("X-Frame-Options") == "DENY"

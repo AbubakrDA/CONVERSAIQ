@@ -20,15 +20,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 def create_application() -> FastAPI:
+    is_prod = settings.ENVIRONMENT == "production"
     app = FastAPI(
         title=settings.APP_NAME,
         version="0.1.0",
         description="ConversaIQ Enterprise AI Customer Support & Business Intelligence Platform",
-        openapi_url=f"{settings.API_V1_STR}/openapi.json",
-        docs_url=f"{settings.API_V1_STR}/docs",
-        redoc_url=f"{settings.API_V1_STR}/redoc",
+        openapi_url=None if is_prod else f"{settings.API_V1_STR}/openapi.json",
+        docs_url=None if is_prod else f"{settings.API_V1_STR}/docs",
+        redoc_url=None if is_prod else f"{settings.API_V1_STR}/redoc",
         lifespan=lifespan,
     )
+
+    @app.middleware("http")
+    async def security_headers_middleware(request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
 
     # 1. Custom Tenant & Correlation Logging Middleware
     app.add_middleware(TenantAndLoggingMiddleware)

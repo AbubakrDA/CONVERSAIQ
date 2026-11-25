@@ -1,5 +1,5 @@
 from typing import List
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -61,6 +61,18 @@ class Settings(BaseSettings):
         if self.REDIS_URL:
             return self.REDIS_URL
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.ENVIRONMENT in ("production", "staging"):
+            if (
+                self.SECRET_KEY == "conversaiq-dev-secret-key-change-in-production-min32chars"
+                or len(self.SECRET_KEY) < 32
+            ):
+                raise ValueError(
+                    "Security Violation: SECRET_KEY must be overridden with a 32+ char secret in staging/production."
+                )
+        return self
 
 
 settings = Settings()

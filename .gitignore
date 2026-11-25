@@ -45,6 +45,7 @@ test-results/
 
 # Temporary & Data
 *.log
+.run/
 tmp/
 temp/
 quarantine/
