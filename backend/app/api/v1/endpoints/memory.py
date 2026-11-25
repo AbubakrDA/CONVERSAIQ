@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import get_current_user, require_roles, AuthenticatedUser
 from app.models.customer import Customer
 from app.models.memory import CustomerMemory
 from app.schemas.envelope import APIResponse
@@ -25,7 +25,7 @@ router = APIRouter()
 async def create_memory(
     mem_in: MemoryCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[MemoryRead]:
     # 1. Verify customer exists in tenant
@@ -178,7 +178,7 @@ async def get_customer_memory_context(
 async def delete_memory(
     memory_id: str,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[dict]:
     query = select(CustomerMemory).where(
@@ -207,7 +207,7 @@ async def delete_memory(
 async def purge_customer_memories(
     customer_id: str,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[MemoryPurgeResponse]:
     """

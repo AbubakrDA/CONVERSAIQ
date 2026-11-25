@@ -123,16 +123,9 @@ async def list_tenant_users(
 async def create_tenant_user(
     new_user: UserCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("admin", "owner")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[UserRead]:
-    # RBAC: Only Admin or Owner can create/invite staff users
-    if current_user.role not in ("admin", "owner"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Permission denied: Only organization admins or owners can create staff users",
-        )
-
     # Check for duplicate email in this tenant
     existing = await db.execute(
         select(User).where(User.email == new_user.email, User.tenant_id == current_user.tenant_id)

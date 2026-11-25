@@ -49,15 +49,9 @@ async def get_business_mode(
 async def update_business_mode(
     update_data: BusinessModeUpdate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("admin", "owner")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[BusinessModeResponse]:
-    if current_user.role not in ("admin", "owner"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only organization admins can update the business model configuration",
-        )
-
     result = await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))
     tenant = result.scalars().first()
     if tenant:
@@ -79,7 +73,7 @@ async def update_business_mode(
 async def create_product(
     product_in: ProductCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ProductRead]:
     # Check for duplicate SKU in tenant
@@ -124,7 +118,7 @@ async def list_products(
 async def create_service(
     service_in: ServiceCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ServiceRead]:
     db_service = Service(
@@ -159,7 +153,7 @@ async def list_services(
 async def import_csv_data(
     import_req: CSVImportRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[SyncSummary]:
     headers, rows = CSVConnector.parse_csv_content(import_req.csv_content)

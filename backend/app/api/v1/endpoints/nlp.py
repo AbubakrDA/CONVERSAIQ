@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import require_roles, AuthenticatedUser
 from app.models.nlp import QuestionCluster, LoggedQuestion
 from app.schemas.envelope import APIResponse
 from app.schemas.nlp import (
@@ -24,7 +24,7 @@ router = APIRouter()
 async def log_question(
     q_in: LoggedQuestionCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[LoggedQuestionRead]:
     logged_q, _ = await QuestionIntelligenceService.cluster_and_log_question(
@@ -49,7 +49,7 @@ async def list_clusters(
     is_knowledge_gap: Optional[bool] = None,
     intent: Optional[str] = None,
     category: Optional[str] = None,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[List[QuestionClusterRead]]:
     query = select(QuestionCluster).where(QuestionCluster.tenant_id == current_user.tenant_id)
@@ -75,7 +75,7 @@ async def list_clusters(
 @router.get("/knowledge-gaps", response_model=APIResponse[List[KnowledgeGapReport]])
 async def get_knowledge_gaps(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[List[KnowledgeGapReport]]:
     query = (
@@ -114,7 +114,7 @@ async def get_knowledge_gaps(
 @router.get("/trends", response_model=APIResponse[TrendAnalysisResponse])
 async def get_trends(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[TrendAnalysisResponse]:
     # 1. Total questions

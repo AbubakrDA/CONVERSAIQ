@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import require_roles, AuthenticatedUser
 from app.schemas.envelope import APIResponse
 from app.schemas.infrastructure import (
     InfrastructureDashboardResponse,
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("/dashboard", response_model=APIResponse[InfrastructureDashboardResponse])
 async def get_infrastructure_dashboard(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[InfrastructureDashboardResponse]:
     """Retrieve live cloud service health, container telemetry, and DR metrics."""
@@ -32,7 +32,7 @@ async def get_infrastructure_dashboard(
 @router.get("/scaling", response_model=APIResponse[ScalingPolicyResponse])
 async def get_scaling_policy(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
 ) -> APIResponse[ScalingPolicyResponse]:
     """Retrieve AWS ECS Fargate horizontal auto-scaling policy parameters."""
     policy = CloudInfrastructureService.get_scaling_policy()
@@ -46,7 +46,7 @@ async def get_scaling_policy(
 @router.get("/quota", response_model=APIResponse[TenantQuotaUsageResponse])
 async def get_tenant_quota(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[TenantQuotaUsageResponse]:
     """Measure multi-tenant storage quota and API invocation consumption."""

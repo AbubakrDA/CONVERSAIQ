@@ -54,16 +54,10 @@ async def get_branding(
 async def update_branding(
     branding_in: TenantBrandingUpdate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[TenantBrandingRead]:
     """Update tenant corporate branding settings (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only tenant administrators can modify corporate branding.",
-        )
-
     branding = await EnterpriseAdminService.update_branding(current_user.tenant_id, branding_in, db)
 
     # Record audit trail
@@ -110,16 +104,10 @@ async def list_staff_users(
 async def invite_staff_user(
     invite_in: StaffUserInviteRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[StaffUserRead]:
     """Invite a new staff user and allocate initial RBAC role (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can invite new staff users.",
-        )
-
     # Check duplicate email in tenant
     dup_res = await db.execute(
         select(User).where(User.tenant_id == current_user.tenant_id, User.email == invite_in.email)
@@ -167,16 +155,10 @@ async def update_staff_role(
     user_id: str,
     role_in: StaffUserRoleUpdateRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[StaffUserRead]:
     """Update a staff member's RBAC role (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can modify staff roles.",
-        )
-
     res = await db.execute(
         select(User).where(User.id == user_id, User.tenant_id == current_user.tenant_id)
     )
@@ -234,16 +216,10 @@ async def get_security_posture(
 async def revoke_user_session(
     revoke_in: SessionRevokeRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[SessionRevokeResponse]:
     """Revoke active authentication sessions for a staff member."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can revoke user sessions.",
-        )
-
     resp = await EnterpriseAdminService.revoke_user_sessions(
         tenant_id=current_user.tenant_id,
         user_id=revoke_in.user_id,
@@ -345,16 +321,10 @@ async def get_model_config(
 async def update_model_config(
     config_in: ModelRoutingConfigUpdate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ModelRoutingConfigRead]:
     """Update tenant LLM model routing parameters (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can modify model routing parameters.",
-        )
-
     cfg = await EnterpriseAdminService.update_model_config(current_user.tenant_id, config_in, db)
 
     # Record audit trail

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import get_current_user, require_roles, AuthenticatedUser
 from app.models.knowledge import KBCollection, KBDocument, KBChunk
 from app.schemas.envelope import APIResponse
 from app.schemas.knowledge import (
@@ -29,7 +29,7 @@ router = APIRouter()
 async def create_collection(
     col_in: CollectionCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[CollectionRead]:
     col = KBCollection(
@@ -76,7 +76,7 @@ async def list_collections(
 async def create_document(
     doc_in: KBDocumentCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[KBDocumentRead]:
     # 1. Verify collection exists in tenant
@@ -203,7 +203,7 @@ async def get_document(
 async def delete_document(
     document_id: str,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[dict]:
     query = select(KBDocument).where(

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import get_current_user, require_roles, AuthenticatedUser
 from app.schemas.envelope import APIResponse
 from app.schemas.backup import (
     BackupTriggerRequest,
@@ -42,16 +42,10 @@ async def get_backup_status(
 async def trigger_backup(
     backup_in: BackupTriggerRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[BackupRecordResponse]:
     """Manually trigger an encrypted database or system backup (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only tenant administrators can trigger system backups.",
-        )
-
     record = await BackupEngineService.create_backup(
         db=db,
         tenant_id=current_user.tenant_id,
@@ -111,16 +105,10 @@ async def get_backup_history(
 async def execute_restore_drill(
     drill_in: RestoreDrillRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[RestoreDrillResponse]:
     """Execute automated non-destructive restore verification drill in isolated sandbox (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only tenant administrators can execute restore verification drills.",
-        )
-
     drill = await BackupEngineService.execute_restore_drill(
         db=db,
         tenant_id=current_user.tenant_id,
@@ -195,16 +183,10 @@ async def get_retention_policy(
 async def update_retention_policy(
     policy_in: RetentionPolicyUpdate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[RetentionPolicyResponse]:
     """Update GFS backup retention parameters (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only tenant administrators can modify backup retention policies.",
-        )
-
     policy = await BackupEngineService.update_retention_policy(db, current_user.tenant_id, policy_in)
 
     # Record audit trail
@@ -230,16 +212,10 @@ async def update_retention_policy(
 @router.post("/prune", response_model=APIResponse[PruneBackupsResponse])
 async def prune_expired_backups(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[PruneBackupsResponse]:
     """Prune expired backup archives past retention date (Admin/Owner only)."""
-    if current_user.role not in ("owner", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only tenant administrators can prune backup archives.",
-        )
-
     res = await BackupEngineService.prune_expired_backups(db)
     return APIResponse.ok(
         data=res,

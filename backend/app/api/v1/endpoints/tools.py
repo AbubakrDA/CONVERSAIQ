@@ -25,7 +25,7 @@ router = APIRouter()
 @router.get("", response_model=APIResponse[List[ToolDefinitionRead]])
 async def list_registered_tools(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
 ) -> APIResponse[List[ToolDefinitionRead]]:
     """List all registered tools in the Tool Gateway with schemas and risk classifications."""
     tools = ToolGatewayService.list_tools()
@@ -78,7 +78,7 @@ async def list_executions(
     request: Request,
     status_filter: Optional[str] = Query(None, alias="status"),
     tool_name: Optional[str] = None,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[List[ToolExecutionRead]]:
     """List tool execution audit log entries."""
@@ -103,7 +103,7 @@ async def list_executions(
 async def get_execution_detail(
     execution_id: str,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ToolExecutionRead]:
     """Retrieve full audit detail for a specific tool execution."""
@@ -198,7 +198,7 @@ async def reject_tool_execution(
 @router.get("/mcp-servers", response_model=APIResponse[List[MCPServerConfigRead]])
 async def list_mcp_servers(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[List[MCPServerConfigRead]]:
     """List registered Model Context Protocol (MCP) servers."""
@@ -217,7 +217,7 @@ async def list_mcp_servers(
 async def register_mcp_server(
     server_in: MCPServerConfigCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[MCPServerConfigRead]:
     """Register a new external MCP server and mock initial tool discovery."""

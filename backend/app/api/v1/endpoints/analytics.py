@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import get_current_user, require_roles, AuthenticatedUser
 from app.models.analytics import AIInsight, OrganizationalMemoryEntry, ExecutiveReport
 from app.schemas.envelope import APIResponse
 from app.schemas.analytics import (
@@ -72,7 +72,7 @@ async def list_insights(
 @router.post("/insights/generate", response_model=APIResponse[List[AIInsightRead]])
 async def generate_insights(
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[List[AIInsightRead]]:
     """Trigger real-time operational analysis and synthesize AI insights."""
@@ -94,7 +94,7 @@ async def acknowledge_insight(
     insight_id: str,
     ack: AIInsightAcknowledge,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[AIInsightRead]:
     """Acknowledge or dismiss an AI insight."""
@@ -152,7 +152,7 @@ async def list_organizational_memory(
 async def create_organizational_memory(
     entry_in: OrganizationalMemoryCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[OrganizationalMemoryRead]:
     """Record a new organizational memory entry or operational playbook."""
@@ -181,7 +181,7 @@ async def create_organizational_memory(
 async def query_copilot(
     query_in: CopilotQueryRequest,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[CopilotQueryResponse]:
     """Ask Analytics Copilot an administrative analytics query (governed read-only)."""
@@ -224,7 +224,7 @@ async def list_reports(
 async def generate_report(
     rep_in: ExecutiveReportCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[ExecutiveReportRead]:
     """Compile and persist an Executive Intelligence Report."""

@@ -7,7 +7,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.auth import get_current_user, AuthenticatedUser
+from app.core.auth import get_current_user, require_roles, AuthenticatedUser
 from app.models.customer import Customer
 from app.models.ticket import Ticket, TicketNote, Feedback
 from app.schemas.envelope import APIResponse
@@ -250,7 +250,7 @@ async def assign_ticket(
     ticket_id: str,
     assign_in: TicketAssignUpdate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[TicketRead]:
     stmt = (
@@ -292,7 +292,7 @@ async def add_ticket_note(
     ticket_id: str,
     note_in: TicketNoteCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[TicketNoteRead]:
     result = await db.execute(
@@ -327,7 +327,7 @@ async def request_feedback(
     ticket_id: str,
     fb_req: FeedbackRequestCreate,
     request: Request,
-    current_user: AuthenticatedUser = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(require_roles("owner", "admin", "agent")),
     db: AsyncSession = Depends(get_db),
 ) -> APIResponse[FeedbackRead]:
     result = await db.execute(
