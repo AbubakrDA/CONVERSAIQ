@@ -244,3 +244,44 @@ async def test_self_approval_rejected_with_403(client: AsyncClient) -> None:
     sup_appr = await client.post(f"/api/v1/tools/executions/{execution_id}/approve", headers=headers_2)
     assert sup_appr.status_code == 200
     assert sup_appr.json()["data"]["status"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_cross_tenant_tool_approval_and_rejection_blocked(client: AsyncClient) -> None:
+    """Verify an admin in Tenant Beta cannot approve or reject Tenant Alpha's pending tool execution."""
+    token_alpha_agent = create_access_token("agent_ct_a", "tenant_ct_alpha", "agent", "ct_a@test.com")
+    token_beta_admin = create_access_token("admin_ct_b", "tenant_ct_beta", "admin", "ct_b@test.com")
+
+    exec_res = await client.post(
+        "/api/v1/tools/execute",
+        headers={"Authorization": f"Bearer {token_alpha_agent}"},
+        json={
+            "tool_name": "process_refund",
+            "caller_agent": "billing_agent",
+            "parameters": {"order_number": "ORD-CT-100", "amount": 50.0},
+        },
+    )
+    assert exec_res.status_code == 200
+    execution_id = exec_res.json()["data"]["execution_id"]
+
+    app_res = await client.post(
+        f"/api/v1/tools/executions/{execution_id}/approve",
+        headers={"Authorization": f"Bearer {token_beta_admin}"},
+        json={"decision": "approve", "reason": "Cross-tenant attempt"},
+    )
+    assert app_res.status_code in (400, 404)
+
+    rej_res = await client.post(
+        f"/api/v1/tools/executions/{execution_id}/reject",
+        headers={"Authorization": f"Bearer {token_beta_admin}"},
+        json={"decision": "reject", "reason": "Cross-tenant attempt"},
+    )
+    assert rej_res.status_code in (400, 404)
+
+    # Confirm Tenant Alpha's execution remains untouched
+    get_res = await client.get(
+        f"/api/v1/tools/executions/{execution_id}",
+        headers={"Authorization": f"Bearer {token_alpha_agent}"},
+    )
+    assert get_res.status_code == 200
+    assert get_res.json()["data"]["status"] == "requires_approval"
