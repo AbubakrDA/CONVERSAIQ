@@ -1,8 +1,22 @@
 # PHASE ROADMAP — ConversaIQ
 
-**Date:** 2026-11-24  
-**Status:** Proposed — pending approval  
+**Date:** 2026-11-25  
+**Status:** Active — Hardening (`harden/production-readiness`)  
 **Reference:** Master Specification §13
+
+---
+
+## 0. Phase Status Summary (`Done` / `Partial` / `Not started`)
+
+| Phase | Status | Verified Basis |
+|---|---|---|
+| Phase 0 — Audit & Harness | **Done** | Harness docs & architecture baselines present. |
+| Phase 1 — UI Foundation | **Done** | `npm run lint`, `tsc --noEmit`, `vitest run` (`8/8`), `vite build` pass. |
+| Phase 2 — Core Platform & DB | **Partial** | SQLite async tests + Alembic `001`–`014` pass; live PostgreSQL 16 RLS (`013`) `Not started` locally (`BLOCKED` without `psql`). |
+| Phase 3 — Identity & Access | **Partial** | HS256 JWT, `require_roles` RBAC (`129/129`), and tenant isolation pass; live Keycloak OIDC JWKS `Not started`. |
+| Phase 4–13 — Core Modules & Enterprise | **Done** | Business Hub, AI Chat + PromptGuard, Doc Intel + ClamAV/heuristic scanner, RAG, Memory, Tickets, NLP, Analytics, Tool Gateway (4-eyes approval), Chained Audit Logs (`240+` backend tests pass). |
+| Phase 14–16 — Cloud, Backup & Hardening | **Partial** | Hardened `docker-compose*.yml` + CI workflow; `trivy`/`gitleaks`/`bandit`/`semgrep` & live Docker/AWS `Not started` locally. |
+| Phase 18–20 — Native Windows & Cutover | **Partial** | Deployment scripts & runbooks present; live Windows reboot & AWS staging/prod cutover `Not started`. |
 
 ---
 
