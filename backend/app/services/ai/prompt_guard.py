@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional
 
 
 class PromptGuard:
@@ -46,7 +46,31 @@ class PromptGuard:
         Layer 2: Wraps user text in an untrusted data envelope, neutralizing prompt escape attempts.
         """
         clean_text = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", text)
+        clean_text = re.sub(
+            r"</?(customer_message_untrusted|system|instruction)\b[^>]*>",
+            "[ESCAPED_TAG]",
+            clean_text,
+            flags=re.IGNORECASE,
+        )
         return f"<customer_message_untrusted>\n{clean_text}\n</customer_message_untrusted>"
+
+    @classmethod
+    def build_role_separated_messages(
+        cls,
+        system_prompt: str,
+        user_message: str,
+        document_chunks: Optional[List[str]] = None,
+    ) -> List[Dict[str, str]]:
+        """
+        Layer 2: Builds role-separated LLM messages so untrusted user/document content
+        is never concatenated into the privileged system message.
+        """
+        messages: List[Dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        if document_chunks:
+            wrapped_docs = "\n".join(cls.sanitize_untrusted_envelope(c) for c in document_chunks)
+            messages.append({"role": "user", "content": f"Untrusted Document Context:\n{wrapped_docs}"})
+        messages.append({"role": "user", "content": cls.sanitize_untrusted_envelope(user_message)})
+        return messages
 
     @classmethod
     def filter_output(cls, response_text: str) -> Tuple[str, bool]:

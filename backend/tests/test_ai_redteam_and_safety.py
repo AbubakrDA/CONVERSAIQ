@@ -118,3 +118,39 @@ async def test_multilingual_jailbreak_neutralization() -> None:
         intent, cat = QuestionIntelligenceService.classify_intent_and_category(text)
         assert intent == "pricing_inquiry"
         assert cat == "sales"
+
+
+@pytest.mark.asyncio
+async def test_prompt_injection_corpus_and_role_separation() -> None:
+    """Verify injection corpus stays inside untrusted envelope, never in system role, and Pydantic tool schema validates."""
+    import json
+    from pathlib import Path
+    from pydantic import ValidationError
+    from app.schemas.tool import ToolExecuteRequest
+
+    corpus = json.loads((Path(__file__).parent / "fixtures" / "injections.json").read_text(encoding="utf-8"))
+    assert len(corpus) >= 5
+
+    for case in corpus:
+        is_valid, _ = PromptGuard.validate_user_input(case["payload"])
+        if case["expect_blocked"]:
+            assert is_valid is False, f"Expected blocked for {case['id']}"
+
+        envelope = PromptGuard.sanitize_untrusted_envelope(case["payload"])
+        assert envelope.startswith("<customer_message_untrusted>\n")
+        assert envelope.endswith("\n</customer_message_untrusted>")
+        inner = envelope[len("<customer_message_untrusted>\n"):-len("\n</customer_message_untrusted>")]
+        assert "</customer_message_untrusted>" not in inner.lower()
+        assert "</system>" not in inner.lower()
+
+        msgs = PromptGuard.build_role_separated_messages(
+            system_prompt="You are ConversaIQ support.",
+            user_message=case["payload"],
+            document_chunks=[case["payload"]],
+        )
+        assert msgs[0] == {"role": "system", "content": "You are ConversaIQ support."}
+        assert all(m["role"] == "user" for m in msgs[1:])
+        assert case["payload"] not in msgs[0]["content"]
+
+    with pytest.raises(ValidationError):
+        ToolExecuteRequest(tool_name="", arguments="not-a-dict")  # type: ignore[arg-type]
