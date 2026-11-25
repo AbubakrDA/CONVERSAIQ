@@ -1,13 +1,22 @@
 <#
 .SYNOPSIS
-    ConversaIQ Staging Deployment Orchestrator (Windows PowerShell Default)
+    ConversaIQ Multi-Mode Deployment Orchestrator
 .DESCRIPTION
-    Orchestrates Terraform plan/apply, Docker build/push to ECR, DB migrations, and ECS deployment.
-    Includes a mandatory -ConfirmProvisioning safety gate so paid AWS resources are never silently created.
+    Supports three independent deployment modes across WINDOWS_LOCAL, GITHUB_ACTIONS, and AWS_CLOUDSHELL:
+      - NATIVE      : Docker-free local execution (default for WINDOWS_LOCAL)
+      - DOCKER      : Local Docker image build -> ECR -> ECS Fargate
+      - AWS_MANAGED : Remote AWS CodeBuild image build -> ECR -> ECS Fargate (no local Docker required)
+    Includes a mandatory -ConfirmProvisioning safety gate before creating paid AWS resources.
 #>
 param(
+    [ValidateSet("WINDOWS_LOCAL", "GITHUB_ACTIONS", "AWS_CLOUDSHELL")]
+    [string]$Environment = $env:CONVERSAIQ_DEPLOY_ENV,
+
+    [ValidateSet("NATIVE", "DOCKER", "AWS_MANAGED")]
+    [string]$Mode = $env:CONVERSAIQ_DEPLOY_MODE,
+
     [string]$AwsRegion = "us-east-1",
-    [string]$Environment = "staging",
+    [string]$Stage = "staging",
     [string]$ReleaseTag = "staging-$(Get-Date -Format 'yyyyMMdd-HHmmss')",
     [switch]$ConfirmProvisioning
 )
@@ -16,13 +25,23 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path "$scriptDir\..\.."
 
-Write-Host "=== ConversaIQ Staging Deployment ($ReleaseTag) ===" -ForegroundColor Cyan
-& "$scriptDir\Select-Environment.ps1"
+$selection = & "$scriptDir\Select-Environment.ps1" -Environment $Environment -Mode $Mode
+$activeEnv = $selection.Environment
+$activeMode = $selection.Mode
 
-Write-Host "`n[Step 1] Running Pre-Flight Checks..." -ForegroundColor Yellow
-& "$scriptDir\Invoke-StagingPreflight.ps1"
+Write-Host "`n=== ConversaIQ Multi-Mode Deployment ($activeEnv + $activeMode) ===" -ForegroundColor Cyan
+
+# Route NATIVE mode directly to Docker-free workflow
+if ($activeMode -eq "NATIVE") {
+    & "$scriptDir\Deploy-Native.ps1"
+    exit $LASTEXITCODE
+}
+
+# Pre-flight check for DOCKER or AWS_MANAGED
+Write-Host "`n[Step 1] Running Pre-Flight Checks for $activeMode..." -ForegroundColor Yellow
+& "$scriptDir\Invoke-StagingPreflight.ps1" -Environment $activeEnv -Mode $activeMode
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Pre-flight check failed. Resolve missing tools or environment variables before deploying."
+    Write-Error "Pre-flight check failed for mode '$activeMode'. Resolve missing tools or cloud configuration."
 }
 
 if (-not $ConfirmProvisioning) {
@@ -35,29 +54,34 @@ if (-not $ConfirmProvisioning) {
     exit 0
 }
 
-Write-Host "`n[Step 2] Provisioning Staging Infrastructure via Terraform..." -ForegroundColor Yellow
+Write-Host "`n[Step 2] Provisioning Shared Infrastructure via Terraform..." -ForegroundColor Yellow
 Push-Location "$repoRoot\infrastructure\terraform"
 terraform init
-terraform workspace select $Environment 2>$null; if ($LASTEXITCODE -ne 0) { terraform workspace new $Environment }
-terraform plan -var="environment=$Environment" -var="aws_region=$AwsRegion" -out="$Environment.tfplan"
-terraform apply -auto-approve "$Environment.tfplan"
+terraform workspace select $Stage 2>$null; if ($LASTEXITCODE -ne 0) { terraform workspace new $Stage }
+terraform plan -var="environment=$Stage" -var="aws_region=$AwsRegion" -out="$Stage.tfplan"
+terraform apply -auto-approve "$Stage.tfplan"
 $ecrBackend = terraform output -raw ecr_backend_url
 $ecrFrontend = terraform output -raw ecr_frontend_url
 $ecsCluster = terraform output -raw ecs_cluster_name
 Pop-Location
 
-Write-Host "`n[Step 3] Building & Pushing Hardened Multi-Stage Containers to ECR..." -ForegroundColor Yellow
-$accountId = (aws sts get-caller-identity --query Account --output text)
-aws ecr get-login-password --region $AwsRegion | docker login --username AWS --password-stdin "$accountId.dkr.ecr.$AwsRegion.amazonaws.com"
+if ($activeMode -eq "DOCKER") {
+    Write-Host "`n[Step 3] Building & Pushing Containers via Local Docker..." -ForegroundColor Yellow
+    $accountId = (aws sts get-caller-identity --query Account --output text)
+    aws ecr get-login-password --region $AwsRegion | docker login --username AWS --password-stdin "$accountId.dkr.ecr.$AwsRegion.amazonaws.com"
 
-docker build -t "${ecrBackend}:${ReleaseTag}" -f "$repoRoot\backend\Dockerfile.prod" "$repoRoot\backend"
-docker push "${ecrBackend}:${ReleaseTag}"
+    docker build -t "${ecrBackend}:${ReleaseTag}" -f "$repoRoot\backend\Dockerfile.prod" "$repoRoot\backend"
+    docker push "${ecrBackend}:${ReleaseTag}"
 
-docker build -t "${ecrFrontend}:${ReleaseTag}" -f "$repoRoot\frontend\Dockerfile.prod" "$repoRoot\frontend"
-docker push "${ecrFrontend}:${ReleaseTag}"
+    docker build -t "${ecrFrontend}:${ReleaseTag}" -f "$repoRoot\frontend\Dockerfile.prod" "$repoRoot\frontend"
+    docker push "${ecrFrontend}:${ReleaseTag}"
+} elseif ($activeMode -eq "AWS_MANAGED") {
+    Write-Host "`n[Step 3] Triggering Remote AWS CodeBuild (Zero Local Docker Required)..." -ForegroundColor Yellow
+    aws codebuild start-build --project-name "conversaiq-$Stage-builder" --environment-variables-override "name=IMAGE_TAG,value=$ReleaseTag,type=PLAINTEXT" --region $AwsRegion
+}
 
 Write-Host "`n[Step 4] Updating ECS Fargate Services..." -ForegroundColor Yellow
-aws ecs update-service --cluster $ecsCluster --service "conversaiq-$Environment-web" --force-new-deployment --region $AwsRegion
-aws ecs update-service --cluster $ecsCluster --service "conversaiq-$Environment-worker" --force-new-deployment --region $AwsRegion
+aws ecs update-service --cluster $ecsCluster --service "conversaiq-$Stage-web" --force-new-deployment --region $AwsRegion
+aws ecs update-service --cluster $ecsCluster --service "conversaiq-$Stage-worker" --force-new-deployment --region $AwsRegion
 
-Write-Host "`nStaging deployment triggered successfully for tag $ReleaseTag." -ForegroundColor Green
+Write-Host "`nDeployment triggered successfully ($activeEnv + $activeMode, tag=$ReleaseTag)." -ForegroundColor Green

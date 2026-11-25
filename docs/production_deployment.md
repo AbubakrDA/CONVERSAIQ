@@ -115,8 +115,27 @@ To execute a manual rollback from `WINDOWS_LOCAL` PowerShell:
 
 ---
 
-## 4. Environment Selection Mechanism
-All environments share the exact same Terraform manifests, Dockerfiles, and verification scripts:
-- `WINDOWS_LOCAL` *(Default)*: Run `.\scripts\deploy\Select-Environment.ps1 -Environment WINDOWS_LOCAL` and `.\scripts\deploy\Deploy-Staging.ps1`.
+## 4. Environment & Deployment Mode Selection
+ConversaIQ separates **Execution Environment** (`WINDOWS_LOCAL`, `GITHUB_ACTIONS`, `AWS_CLOUDSHELL`) from **Deployment Mode** (`NATIVE`, `DOCKER`, `AWS_MANAGED`). Docker is **optional**.
+
+### Deployment Modes
+- **`NATIVE`** *(Default on `WINDOWS_LOCAL`)*: Docker-free local production execution via Uvicorn + static production SPA server (`scripts/deploy/serve_frontend.mjs`):
+  ```powershell
+  .\scripts\deploy\Deploy-Native.ps1
+  .\scripts\deploy\Start-Native.ps1
+  .\scripts\deploy\Test-Native.ps1
+  .\scripts\deploy\Stop-Native.ps1
+  ```
+- **`DOCKER`**: Local multi-stage container build -> ECR push -> ECS Fargate deploy:
+  ```powershell
+  .\scripts\deploy\Deploy-Staging.ps1 -Environment WINDOWS_LOCAL -Mode DOCKER -ConfirmProvisioning
+  ```
+- **`AWS_MANAGED`**: Remote AWS CodeBuild (`buildspec.yml`) -> ECR -> ECS Fargate + S3/CloudFront (no local Docker required):
+  ```powershell
+  .\scripts\deploy\Deploy-Staging.ps1 -Environment WINDOWS_LOCAL -Mode AWS_MANAGED -ConfirmProvisioning
+  ```
+
+### Runner Environments
+- `WINDOWS_LOCAL` *(Default)*: Primary local PowerShell workflow.
 - `GITHUB_ACTIONS` *(Optional CI/CD)*: Trigger `.github/workflows/staging-deploy.yml` via `workflow_dispatch`.
 - `AWS_CLOUDSHELL` *(Optional AWS Shell)*: Follow `docs/cloudshell_deployment.md`.
