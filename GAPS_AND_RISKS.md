@@ -138,3 +138,16 @@ flowchart TD
 | **Phase 6** | G-13 (upload), G-14 (malware scan) | Document intelligence |
 | **Phase 7** | G-12 (RAG/KB) | Knowledge management |
 | **Phase 8+** | G-16, G-17, remaining features | Full platform buildout |
+
+---
+
+## 6. Post-Hardening Remaining Gaps & Ranked Risks (2026-11-25)
+
+| Rank | ID | Risk / Gap | Current Status | Required Action |
+|---|---|---|---|---|
+| 1 (Critical) | GAP-H01 | **Live PostgreSQL 16 RLS execution** | `NOT VERIFIED` locally (`psql`/`docker` missing); migration `013` & CI job ready | Run `uv run pytest tests/test_rls_postgres_integration.py` against PG 16 (`POSTGRES_TEST_URL`) with non-superuser role |
+| 2 (Critical) | GAP-H02 | **Keycloak OIDC JWKS validation** | `NOT VERIFIED` (`ALLOW_DEV_STATIC_JWT_SECRET` fails prod startup; live JWKS fetch not wired) | Connect live Keycloak realm RS256 JWKS verification in `security.py` and PKCE login in frontend |
+| 3 (High) | GAP-H03 | **Frontend module pages render demo data** | `PARTIALLY VERIFIED` (`apiClient.ts` + `Demo Data` banner wired; 9 pages not yet wired) | Wire `frontend/src/pages/*.tsx` to `/api/v1/*` endpoints |
+| 4 (High) | GAP-H04 | **Host-missing security & a11y scanners** | `BLOCKED` locally (`gitleaks`, `bandit`, `semgrep`, `trivy`, `pip-audit`, `actionlint`, `axe` absent) | Run `.github/workflows/ci-security-and-tests.yml` in GitHub Actions and `axe` in browser |
+| 5 (Medium) | GAP-H05 | **ClamAV daemon runtime** | `PARTIALLY VERIFIED` (fails closed to quarantine when unreachable; tested via mock) | Deploy `clamd` service in staging and test with EICAR |
+| 6 (Medium) | GAP-H06 | **AWS staging/production cutover & Windows reboot test** | `NOT VERIFIED` / requires explicit authorization | Obtain explicit authorization for AWS provisioning and host reboot verification |
