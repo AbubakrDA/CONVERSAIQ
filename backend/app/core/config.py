@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str = Field(default="minioadmin")
     S3_BUCKET_NAME: str = Field(default="conversaiq-storage")
 
+    # Malware Scanning (ClamAV)
+    CLAMAV_ENABLED: bool = Field(default=False)
+    CLAMAV_HOST: str = Field(default="localhost")
+    CLAMAV_PORT: int = Field(default=3310)
+    CLAMAV_SOCKET: str | None = None
+
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:3000",

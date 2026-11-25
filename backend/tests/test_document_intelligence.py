@@ -215,3 +215,58 @@ async def test_strict_multi_tenant_isolation_documents(client: AsyncClient) -> N
     del_a = await client.delete(f"/api/v1/documents/{doc_a_id}", headers={"Authorization": f"Bearer {token_tenant_a}"})
     assert del_a.status_code == 200
     assert del_a.json()["data"]["deleted"] is True
+
+
+@pytest.mark.asyncio
+async def test_pdf_embedded_active_objects_quarantined_full_file(client: AsyncClient) -> None:
+    """Verify full-file PDF scan catches /JavaScript, /JS, /Launch, /EmbeddedFile beyond 4 KB."""
+    token = create_access_token("user_pdf_js", "tenant_pdf_js", "agent", "pdfjs@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Place /JavaScript after 8 KB of benign padding
+    padding = b"% " + (b"A" * 8192) + b"\n"
+    for marker in (b"/JavaScript", b"/JS", b"/Launch", b"/EmbeddedFile"):
+        malicious_pdf = b"%PDF-1.4\n" + padding + b"2 0 obj\n<< " + marker + b" (app.alert(1)) >>\nendobj\n%%EOF"
+        res = await client.post(
+            "/api/v1/documents/upload",
+            headers=headers,
+            files={"file": ("active_pdf.pdf", io.BytesIO(malicious_pdf), "application/pdf")},
+        )
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data["status"] == "quarantined"
+        assert data["is_quarantined"] is True
+        assert "Active PDF object" in data["quarantine_reason"]
+
+
+@pytest.mark.asyncio
+async def test_clamav_unreachable_fails_closed_to_quarantine(client: AsyncClient) -> None:
+    """Verify unreachable ClamAV daemon fails closed and quarantines the upload."""
+    from app.core.config import settings
+
+    token = create_access_token("user_clam_down", "tenant_clam_down", "agent", "clam@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    orig_enabled = settings.CLAMAV_ENABLED
+    orig_port = settings.CLAMAV_PORT
+    try:
+        settings.CLAMAV_ENABLED = True
+        settings.CLAMAV_PORT = 59999  # Closed port -> unreachable clamd
+
+        res = await client.post(
+            "/api/v1/documents/upload",
+            headers=headers,
+            files={"file": ("clean_when_scanner_down.pdf", io.BytesIO(SAMPLE_VALID_PDF), "application/pdf")},
+        )
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data["status"] == "quarantined"
+        assert data["is_quarantined"] is True
+        assert "unreachable" in data["quarantine_reason"].lower()
+
+        # Download must be blocked with 403
+        dl = await client.get(f"/api/v1/documents/{data['id']}/download", headers=headers)
+        assert dl.status_code == 403
+    finally:
+        settings.CLAMAV_ENABLED = orig_enabled
+        settings.CLAMAV_PORT = orig_port

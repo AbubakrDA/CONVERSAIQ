@@ -216,7 +216,9 @@ flowchart TD
 
 Security invariants:
 - All uploads treated as hostile until proven clean
-- No execution of embedded scripts or macros
+- Full-file heuristic pre-filter scans entire payload (EICAR, MZ/ELF/Mach-O headers, `<script>`/`javascript:`, PDF `/JavaScript`, `/JS`, `/Launch`, `/EmbeddedFile`)
+- ClamAV `clamd` `INSTREAM` scanner (`MalwareScanner` / `ClamAVScanner`) fails closed (quarantines upload if unreachable in staging/production or when `CLAMAV_ENABLED=True`)
+- **Coverage boundary:** In `development` with `CLAMAV_ENABLED=False`, only the full-file heuristic pre-filter runs; live virus signature scanning requires a running `clamd` daemon with updated definitions in staging/production.
 - Document/image content cannot override system instructions
 - Signed, expiring download URLs — no direct bucket access
 - Tenant+customer authorization checked on every download
