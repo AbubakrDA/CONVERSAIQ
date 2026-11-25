@@ -55,3 +55,6 @@ backend/app/storage_data/
 
 # Keep evidence directories
 !engineering/evidence/**/.gitkeep
+*.db
+*.sqlite*
+tb.txt
