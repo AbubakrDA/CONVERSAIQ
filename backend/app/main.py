@@ -68,14 +68,49 @@ def create_application() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+        safe_errors = [
+            {"loc": list(e.get("loc", [])), "msg": str(e.get("msg", "")), "type": e.get("type", "")}
+            for e in exc.errors()
+        ]
         error_resp = APIResponse.fail(
             code="VALIDATION_ERROR",
             message="Request body or query parameter validation failed",
-            details={"errors": exc.errors()},
+            details={"errors": safe_errors},
             request_id=getattr(request.state, "request_id", None),
             tenant_id=getattr(request.state, "tenant_id", None),
         )
         return JSONResponse(status_code=422, content=error_resp.model_dump())
+
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
+        msg = str(exc)
+        lowered = msg.lower()
+        if "not found" in lowered:
+            status_code, code = 404, "NOT_FOUND"
+        elif any(k in lowered for k in ("forbidden", "denied", "unauthorized", "cannot approve", "cannot reject")):
+            status_code, code = 403, "FORBIDDEN"
+        elif any(k in lowered for k in ("already exists", "duplicate", "conflict", "not pending")):
+            status_code, code = 409, "CONFLICT"
+        else:
+            status_code, code = 400, "BAD_REQUEST"
+
+        error_resp = APIResponse.fail(
+            code=code,
+            message=msg,
+            request_id=getattr(request.state, "request_id", None),
+            tenant_id=getattr(request.state, "tenant_id", None),
+        )
+        return JSONResponse(status_code=status_code, content=error_resp.model_dump())
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        error_resp = APIResponse.fail(
+            code="INTERNAL_SERVER_ERROR",
+            message="An unexpected internal error occurred.",
+            request_id=getattr(request.state, "request_id", None),
+            tenant_id=getattr(request.state, "tenant_id", None),
+        )
+        return JSONResponse(status_code=500, content=error_resp.model_dump())
 
     return app
 
