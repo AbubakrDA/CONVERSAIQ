@@ -1,5 +1,6 @@
 from typing import Callable, Union, Sequence
 from fastapi import Depends, Header, HTTPException, status, Request
+from app.core.database import tenant_context_var
 from app.core.security import verify_access_token
 
 
@@ -39,9 +40,10 @@ async def get_current_user(
         tenant_id=payload.get("tenant_id", ""),
     )
 
-    # Attach to request state for middleware & telemetry
+    # Attach to request state and DB RLS ContextVar from verified JWT only
     request.state.current_user = user
     request.state.tenant_id = user.tenant_id
+    tenant_context_var.set(user.tenant_id)
 
     return user
 

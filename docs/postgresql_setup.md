@@ -15,11 +15,22 @@ ConversaIQ requires **PostgreSQL 16** with the **`pgvector`** extension for vect
    psql --version
    ```
 3. Install **`pgvector`** for Windows PostgreSQL 16 (build from source with Visual Studio Build Tools or install prebuilt `vector.dll` / `vector.control` into `share\extension` and `lib`).
-4. Create database and enable `pgvector`:
+4. Create database, enable `pgvector`, and create a **non-superuser, non-table-owner** application role (required so PostgreSQL RLS policies are enforced even without relying solely on `FORCE ROW LEVEL SECURITY`):
    ```sql
    CREATE DATABASE conversaiq_db;
    \c conversaiq_db
    CREATE EXTENSION IF NOT EXISTS vector;
+
+   -- Migration owner role (runs alembic upgrade head)
+   CREATE ROLE conversaiq_migrator WITH LOGIN PASSWORD '<MIGRATOR_PASSWORD>';
+   GRANT ALL PRIVILEGES ON DATABASE conversaiq_db TO conversaiq_migrator;
+
+   -- Runtime application role (non-superuser, non-owner, no BYPASSRLS)
+   CREATE ROLE conversaiq_app WITH LOGIN PASSWORD '<APP_PASSWORD>' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+   GRANT CONNECT ON DATABASE conversaiq_db TO conversaiq_app;
+   GRANT USAGE ON SCHEMA public TO conversaiq_app;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO conversaiq_app;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO conversaiq_app;
    ```
 
 ---
