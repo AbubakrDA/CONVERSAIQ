@@ -43,17 +43,16 @@ MUTATING_ROUTE_POLICY = [
 
 
 def test_all_admin_mutating_routes_have_require_roles() -> None:
-    """Verify no protected mutating route in MUTATING_ROUTE_POLICY lacks require_roles."""
-    route_map = {}
-    for r in app.routes:
-        if isinstance(r, APIRoute):
-            for m in r.methods:
-                route_map[(m, r.path)] = r
-
+    """Verify every route in MUTATING_ROUTE_POLICY exists in the FastAPI OpenAPI schema."""
+    import re
+    schema_paths = app.openapi()["paths"]
+    normalized_routes = {
+        (method.upper(), re.sub(r"\{[^}]+\}", "dummy-id", path))
+        for path, methods_dict in schema_paths.items()
+        for method in methods_dict.keys()
+    }
     for method, path, _ in MUTATING_ROUTE_POLICY:
-        normalized = path.replace("dummy-id", "{insight_id}")
-        # Check at least one matching route exists in FastAPI app
-        assert len(route_map) > 0
+        assert (method, path) in normalized_routes, f"Policy route {(method, path)} not found in OpenAPI paths"
 
 
 @pytest.mark.asyncio

@@ -24,3 +24,15 @@
 | `/api/v1/enterprise/branding` (PATCH), `/users/invite`, `/role`, `/security/revoke-session`, `/model-config` | POST / PATCH | `owner`, `admin` | `require_roles` |
 | `/api/v1/infrastructure/*` | GET | `owner`, `admin` | `require_roles` |
 | `/api/v1/backup/trigger`, `/drill`, `/retention-policy` (PUT), `/prune` | POST / PUT | `owner`, `admin` | `require_roles` |
+
+## Execution & Evidence
+- Replaced all ad-hoc `if current_user.role not in (...)` checks in `auth.py`, `backup.py`, `business_data.py`, and `enterprise.py` with `Depends(require_roles(...))`.
+- Added `require_roles` dependencies to `analytics.py`, `knowledge.py`, `memory.py`, `nlp.py`, `tickets.py`, `tools.py`, and `infrastructure.py`.
+- Added parametrized RBAC route matrix test (`tests/test_rbac_route_matrix.py`) covering 32 mutating routes × 4 roles + OpenAPI route registration check.
+
+```
+python -m pytest tests/test_rbac_route_matrix.py -q
+........................................................................ [ 55%]
+.........................................................                [100%]
+129 passed in 2.37s
+```
