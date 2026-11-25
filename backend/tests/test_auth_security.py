@@ -92,7 +92,7 @@ async def test_rbac_admin_vs_agent_permissions(client: AsyncClient) -> None:
     assert response.status_code == 403
     data = response.json()
     assert data["success"] is False
-    assert "Only organization admins or owners can create staff users" in data["error"]["message"]
+    assert "lacks required permissions" in data["error"]["message"]
 
     # 2. Admin token attempting same action
     admin_token = create_access_token(
