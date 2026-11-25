@@ -17,6 +17,7 @@ import pytest
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.core.database import get_db, Base
 
@@ -27,6 +28,8 @@ test_engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
     future=True,
+    poolclass=StaticPool,
+    connect_args={"check_same_thread": False},
 )
 
 test_async_session = async_sessionmaker(
